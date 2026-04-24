@@ -71,6 +71,47 @@ The build relies on these PlatformIO libraries:
 
 All runtime configuration — Wi-Fi credentials, KMB stop IDs, Citybus stop IDs — is managed at runtime through the device's **captive web portal**. Nothing needs to be set at compile time.
 
+### Bootstrap config (one-time, before first flash)
+
+Before flashing, you must seed the device with at least the **AP credentials** so you can reach the captive portal when the device starts in AP mode.
+
+1. Rename the template:
+
+   ```bash
+   cp data/config.json.template data/config.json
+   ```
+
+2. Open `data/config.json` and edit:
+
+   ```jsonc
+   {
+     "wifi": {
+       "ssid": "YOUR_WIFI_SSID",       // optional — can be set later in the web portal
+       "password": "YOUR_WIFI_PASSWORD" // optional — can be set later in the web portal
+     },
+     "ap": {
+       "ssid": "BusETAMonitor-AP",     // REQUIRED — the SSID the device broadcasts in AP mode
+       "password": "12345678"          // REQUIRED — at least 8 characters (WPA2 minimum)
+     },
+     "stops": {
+       "kmb": ["KMB_STOP_ID"],         // optional — pick stops in the web portal instead
+       "ctb": ["CTB_STOP_ID"]          // optional — pick stops in the web portal instead
+     }
+   }
+   ```
+
+   You only need to set the **`ap` block** here. Wi-Fi credentials and stop IDs are easier to configure later through the captive web portal (see [TUTORIAL.md](TUTORIAL.md)). If you leave the Wi-Fi block empty/default, the device will boot straight into AP mode on first power-up.
+
+3. Upload the file to the device's LittleFS partition:
+
+   ```bash
+   pio run -t uploadfs
+   ```
+
+   This same command also uploads the settings page (`data/index.html`) and `data/holiday.json` — re-run it any time you edit anything under `data/`.
+
+> `data/config.json` is your local secrets file (it can hold your home Wi-Fi password). It is **not** intended to be committed to the repo — only `data/config.json.template` should be tracked.
+
 ### First boot
 
 If the device cannot join the saved Wi-Fi (or none is configured), it falls back to AP mode ([src/Wireless.cpp](src/Wireless.cpp)). Connect your phone or laptop to the AP advertised by the device, then open `http://192.168.4.1` in a browser.
