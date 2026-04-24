@@ -2,6 +2,8 @@
 
 Real-time Hong Kong bus arrival time display using **Nextion** + **Waveshare ESP32-C6-LCD-1.47**.
 
+![Main Display](img/main-display-1.jpg)
+
 ## Overview
 
 This project turns a Waveshare ESP32-C6 board with a Nextion 4.3" display into a professional-looking bus stop electronic arrival board.
@@ -29,7 +31,7 @@ The display shows:
 - Routes automatically sorted by route number
 - Hong Kong public holiday countdown (from `holiday.json`)
 - Auto slideshow every 3 seconds
-- Manual touch control (right side hotspot)
+- **Touch to switch ETA page** — tap the right-side hotspot on the Nextion display to manually advance to the next ETA page without waiting for the auto slideshow
 - NTP time synchronization (Hong Kong time, UTC+8)
 - Clean separation of concerns (BusData, HolidayData, Nextion, WebPortal, ConfigManager, Wireless)
 

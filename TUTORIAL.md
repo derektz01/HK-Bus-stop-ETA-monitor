@@ -9,7 +9,18 @@ A walkthrough of the captive web portal used to configure the HK Bus ETA Monitor
 The device serves the settings page on port 80 in both modes:
 
 - **First boot / after a Wi-Fi failure** — the device falls back to AP mode (see [src/Wireless.cpp:23-32](src/Wireless.cpp#L23-L32)). Connect your phone or laptop to the AP advertised by the device, then open `http://192.168.4.1` in a browser.
-- **Normal operation** — the device joins your home Wi-Fi as a station. Open `http://<device-ip>` (the IP appears on the device's screen).
+- **Normal operation** — the device joins your home Wi-Fi as a station. Open `http://<device-ip>` (the IP appears on the device's screen — see below).
+
+### Finding the IP on the Nextion display
+
+To make the address easy to read, the firmware shows a **scrolling Wi-Fi info banner** on the Nextion screen for the first **2 minutes** after boot. The banner contains everything you need to reach the settings page:
+
+- **STA mode** (joined your home Wi-Fi): `WiFi:<ssid>  IP:<ip>` — type that IP into a browser on the same network.
+- **AP mode** (Wi-Fi join failed): `AP:<ssid>  P:<password>  IP:<ip>` — connect your phone to that SSID with the listed password, then open the IP (typically `192.168.4.1`).
+
+![Device screen showing the scrolling Wi-Fi info banner](img/main-display-2.jpg)
+
+After 2 minutes the banner disappears so it doesn't clutter the ETA display. If you miss it or need to see the address again, just power-cycle the device — the banner reappears for another 2 minutes after every boot.
 
 You should see the page below.
 
