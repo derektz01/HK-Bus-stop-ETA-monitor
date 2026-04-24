@@ -1,0 +1,21 @@
+{
+  "year": 2026,
+  "holidays": [
+    { "date": "2026-01-01", "name_tc": "元旦", "name_en": "New Year's Day" },
+    { "date": "2026-02-17", "name_tc": "農曆年初一", "name_en": "Lunar New Year's Day" },
+    { "date": "2026-02-18", "name_tc": "農曆年初二", "name_en": "The second day of Lunar New Year" },
+    { "date": "2026-02-19", "name_tc": "農曆年初三", "name_en": "The third day of Lunar New Year" },
+    { "date": "2026-04-03", "name_tc": "耶穌受難節", "name_en": "Good Friday" },
+    { "date": "2026-04-04", "name_tc": "耶穌受難節翌日", "name_en": "The day following Good Friday" },
+    { "date": "2026-04-06", "name_tc": "清明節翌日", "name_en": "The day following Ching Ming Festival" },
+    { "date": "2026-05-01", "name_tc": "勞動節", "name_en": "Labour Day" },
+    { "date": "2026-05-25", "name_tc": "佛誕翌日", "name_en": "The day following Buddha's Birthday" },
+    { "date": "2026-06-19", "name_tc": "端午節", "name_en": "Dragon Boat Festival" },
+    { "date": "2026-07-01", "name_tc": "香港特別行政區成立紀念日", "name_en": "Hong Kong Special Administrative Region Establishment Day" },
+    { "date": "2026-09-26", "name_tc": "中秋節翌日", "name_en": "The day following Mid-Autumn Festival" },
+    { "date": "2026-10-01", "name_tc": "國慶日", "name_en": "National Day" },
+    { "date": "2026-10-19", "name_tc": "重陽節翌日", "name_en": "The day following Chung Yeung Festival" },
+    { "date": "2026-12-25", "name_tc": "聖誕節", "name_en": "Christmas Day" },
+    { "date": "2026-12-26", "name_tc": "聖誕節後第一個周日", "name_en": "The first Sunday after Christmas" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "wifi": {
+    "ssid": "YOUR_WIFI_SSID",
+    "password": "YOUR_WIFI_PASSWORD"
+  },
+  "ap": {
+    "ssid": "BusETAMonitor-AP",
+    "password": "12345678"
+  },
+  "stops": {
+    "kmb": ["KMB_STOP_ID"],
+    "ctb": ["CTB_STOP_ID"]
+  }
+}
