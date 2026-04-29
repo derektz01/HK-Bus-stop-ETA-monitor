@@ -43,7 +43,7 @@ void Display_Init()
     lvgl_port_lock(-1);
     ui_init();
     // Make the wifi info label scroll horizontally like the Nextion gWifiInfo did.
-    lv_label_set_long_mode(ui_lblWifiInfo, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    //lv_label_set_long_mode(ui_lblWifiInfo, LV_LABEL_LONG_SCROLL_CIRCULAR);
     // SquareLine clears CLICKABLE on ui_ctrTouch (ui_Main.c) so the touch
     // hotspot never receives LV_EVENT_PRESSED. Re-enable here so we don't
     // have to edit a generated file.

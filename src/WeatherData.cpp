@@ -73,15 +73,13 @@ void Weather_FetchOpenMeteo(void)
     }
 
     HTTPClient http;
-    WiFiClientSecure client;
-    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://api.open-meteo.com/v1/forecast?"
                  "latitude=22.2783&longitude=114.1747"
                  "&timezone=Asia/Hong_Kong"
                  "&hourly=temperature_2m,relative_humidity_2m,weather_code"
                  "&forecast_days=2";
 
-    http.begin(client, url);
+    http.begin(url);
     Heap_Log("Weather pre-GET");
     int httpCode = http.GET();
 

@@ -143,13 +143,11 @@ void Fetch_Citybus_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
-    WiFiClientSecure client;
-    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://rt.data.gov.hk/v1/transport/batch/stop-eta/ctb/";
     url += stop_id;
     url += "?lang=zh-hant";
 
-    http.begin(client, url);
+    http.begin(url);
     Heap_Log("Citybus pre-GET");
     int httpCode = http.GET();
 
@@ -203,12 +201,10 @@ void Fetch_KMB_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
-    WiFiClientSecure client;
-    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/";
     url += stop_id;
 
-    http.begin(client, url);
+    http.begin(url);
     Heap_Log("KMB pre-GET");
     int httpCode = http.GET();
 
