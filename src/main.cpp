@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include "Nextion.h"
+#include "Display.h"
+#include "Diagnostics.h"
 #include "BusData.h"
 #include "WiFi.h"
 #include "WeatherData.h"
@@ -24,14 +25,16 @@ void setup()
   Serial.begin(115200);
   delay(800);
 
-  // Initialize Nextion (TX=16, RX=17)
-  Nextion_Init(16, 17);
+  // Brings up the Waveshare ESP32-S3-Touch-LCD-4.3 board, LVGL, and the
+  // SquareLine UI. Must run before any Update_* / ShowWifiInfo call.
+  Display_Init();
 
   // Load configuration from LittleFS
   ConfigMgr.load();
 
   // === Centralized WiFi handling ===
   WiFi_Connect();
+  Heap_Log("after WiFi_Connect");
 
   // Start configuration web server (works in both AP and STA mode)
   WebPortal_Begin();
@@ -138,8 +141,6 @@ void loop()
     Update_Bus_List();
   }
 
-  // Check for touch input to switch page
-  Touch_To_Switch_Page();
-
+  // Touch is handled by ui_event_ctrTouch → NextPage() → OnNextPagePressed()
   delay(10);
 }

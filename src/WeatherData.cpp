@@ -1,6 +1,8 @@
 #include "WeatherData.h"
-#include "Nextion.h"
+#include "Display.h"
+#include "Diagnostics.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -71,17 +73,21 @@ void Weather_FetchOpenMeteo(void)
     }
 
     HTTPClient http;
+    WiFiClientSecure client;
+    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://api.open-meteo.com/v1/forecast?"
                  "latitude=22.2783&longitude=114.1747"
                  "&timezone=Asia/Hong_Kong"
                  "&hourly=temperature_2m,relative_humidity_2m,weather_code"
                  "&forecast_days=2";
 
-    http.begin(url);
+    http.begin(client, url);
+    Heap_Log("Weather pre-GET");
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
     {
+        Heap_Log("Weather post-GET ok");
         String payload = http.getString();
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload);
@@ -117,6 +123,11 @@ void Weather_FetchOpenMeteo(void)
                 }
             }
         }
+    }
+    else
+    {
+        Heap_Log("Weather post-GET FAIL");
+        printf("Weather HTTP %d\n", httpCode);
     }
     http.end();
 }

@@ -1,8 +1,10 @@
 #include "BusData.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "Nextion.h"
+#include "Display.h"
+#include "Diagnostics.h"
 #include <time.h>
 #include <vector>
 #include <algorithm>
@@ -141,15 +143,19 @@ void Fetch_Citybus_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
+    WiFiClientSecure client;
+    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://rt.data.gov.hk/v1/transport/batch/stop-eta/ctb/";
     url += stop_id;
     url += "?lang=zh-hant";
 
-    http.begin(url);
+    http.begin(client, url);
+    Heap_Log("Citybus pre-GET");
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
     {
+        Heap_Log("Citybus post-GET ok");
         String payload = http.getString();
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload);
@@ -180,6 +186,7 @@ void Fetch_Citybus_StopETA(const char *stop_id)
     }
     else
     {
+        Heap_Log("Citybus post-GET FAIL");
         printf("Citybus batch ETA HTTP %d\n", httpCode);
     }
     http.end();
@@ -196,14 +203,18 @@ void Fetch_KMB_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
+    WiFiClientSecure client;
+    client.setInsecure();   // arduino-esp32 v3.x requires explicit TLS policy
     String url = "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/";
     url += stop_id;
 
-    http.begin(url);
+    http.begin(client, url);
+    Heap_Log("KMB pre-GET");
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
     {
+        Heap_Log("KMB post-GET ok");
         String payload = http.getString();
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload);
@@ -227,6 +238,11 @@ void Fetch_KMB_StopETA(const char *stop_id)
                 addRoute(route, seq, etaStr, dataTs, dest, dir);
             }
         }
+    }
+    else
+    {
+        Heap_Log("KMB post-GET FAIL");
+        printf("KMB stop-ETA HTTP %d\n", httpCode);
     }
     http.end();
 
