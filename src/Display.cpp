@@ -143,6 +143,13 @@ void Update_Holiday_Display()
         time_t now = time(nullptr);
         struct tm today;
         localtime_r(&now, &today);
+        // Normalise today to local midnight so the diff against holiday-midnight
+        // produces a whole-day count instead of fractional hours rounded toward
+        // zero. Without this, "today 14:30 vs holiday tomorrow 00:00" yields
+        // 9.5 h / 86400 = 0 days and `今天是X` would fire one day early.
+        today.tm_hour = 0;
+        today.tm_min  = 0;
+        today.tm_sec  = 0;
         time_t todaySeconds = mktime(&today);
 
         String nextHolidayDate;
@@ -167,7 +174,9 @@ void Update_Holiday_Display()
         }
 
         if (minDays == 0) {
-            snprintf(info, sizeof(info), "%s", nextHolidayName.c_str());
+            snprintf(info, sizeof(info), "今天是%s", nextHolidayName.c_str());
+        } else if (minDays == 1) {
+            snprintf(info, sizeof(info), "明天是%s", nextHolidayName.c_str());
         } else {
             snprintf(info, sizeof(info), "%s還有%d天", nextHolidayName.c_str(), minDays);
         }
@@ -214,31 +223,46 @@ void Update_Bus_List()
     lv_obj_t *eta2[4]  = { ui_lblETA12,  ui_lblETA22,  ui_lblETA32,  ui_lblETA42 };
     lv_obj_t *dest[4]  = { ui_lblDest1,  ui_lblDest2,  ui_lblDest3,  ui_lblDest4 };
 
-    // Lock order rule: WITH_LVGL first, then BusData_Lock — never the reverse.
-    // displayRoutes is written by the network task on core 0; this read runs
-    // on core 1 from the slideshow tick (and on core 0 at the end of fetch).
-    WITH_LVGL();
-    BusData_Lock();
-    int page  = currentPage;
-    int start = page * 4;
-    int total = (int)displayRoutes.size();
-    for (int s = 0; s < 4; s++) {
-        int i = start + s;
-        bool has = (i < total);
-        lv_label_set_text(route[s], has ? displayRoutes[i].route        : "");
-        lv_label_set_text(eta1[s],  has ? displayRoutes[i].etaDisplay1  : "");
-        lv_label_set_text(eta2[s],  has ? displayRoutes[i].etaDisplay2  : "");
-        lv_label_set_text(dest[s],  has ? displayRoutes[i].destination  : "");
-        if (has) {
-            printf("Displayed Route %d | %s | %s | %s | %s\n",
-                   s + 1,
-                   displayRoutes[i].route,
-                   displayRoutes[i].etaDisplay1,
-                   displayRoutes[i].etaDisplay2,
-                   displayRoutes[i].destination);
+    // Format the per-slot log lines into stack buffers while locked, then
+    // print AFTER releasing both locks. USB-CDC printf takes 1-10 ms each
+    // and previously held WITH_LVGL for ~50-200 ms, blocking the LVGL render
+    // task and triggering a contention burst when the lock finally released.
+    char lines[4][128];
+    int  lineCount = 0;
+    int  page      = 0;
+    int  total     = 0;
+
+    {
+        // Lock order rule: WITH_LVGL first, then BusData_Lock — never the reverse.
+        WITH_LVGL();
+        BusData_Lock();
+        page      = currentPage;
+        int start = page * 4;
+        total     = (int)displayRoutes.size();
+        for (int s = 0; s < 4; s++) {
+            int i = start + s;
+            bool has = (i < total);
+            const char *r  = has ? displayRoutes[i].route        : "";
+            const char *e1 = has ? displayRoutes[i].etaDisplay1  : "";
+            const char *e2 = has ? displayRoutes[i].etaDisplay2  : "";
+            const char *d  = has ? displayRoutes[i].destination  : "";
+            lv_label_set_text(route[s], r);
+            lv_label_set_text(eta1[s],  e1);
+            lv_label_set_text(eta2[s],  e2);
+            lv_label_set_text(dest[s],  d);
+            if (has) {
+                snprintf(lines[lineCount], sizeof(lines[lineCount]),
+                         "Displayed Route %d | %s | %s | %s | %s",
+                         s + 1, r, e1, e2, d);
+                lineCount++;
+            }
         }
+        BusData_Unlock();
     }
-    BusData_Unlock();
+
+    for (int i = 0; i < lineCount; i++) {
+        printf("%s\n", lines[i]);
+    }
     printf("Bus list updated (Page %d, Total: %d routes)\n", page, total);
 }
 
@@ -287,7 +311,7 @@ void ShowWifiInfo()
     lv_label_set_text(ui_lblWifiInfo, info.c_str());
     // Translucent backdrop (alpha 150/255) so the scrolling SSID/IP stays
     // readable against any background image.
-    lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_clear_flag(ui_lblWifiInfo, LV_OBJ_FLAG_HIDDEN);
 }
 
@@ -296,7 +320,7 @@ void HideWifiInfo()
     {
         WITH_LVGL();
         lv_label_set_text(ui_lblWifiInfo, "");
-        lv_obj_set_style_bg_opa(ui_lblWifiInfo, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_add_flag(ui_lblWifiInfo, LV_OBJ_FLAG_HIDDEN);
     }
     // Logged outside the LVGL guard so we measure the heap *after* any
