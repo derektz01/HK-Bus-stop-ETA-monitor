@@ -15,6 +15,24 @@ char current_weather_emoji[8] = "☀️";
 char current_weather_desc[32] = "晴朗";
 
 // ================================================================
+// Field filter for the Open-Meteo response. Drops the ~8 metadata fields
+// the response carries (latitude, longitude, generationtime_ms,
+// utc_offset_seconds, timezone, timezone_abbreviation, elevation,
+// hourly_units) and the unused `hourly.time` array, leaving only the two
+// arrays we index into.
+// ================================================================
+static const JsonDocument &weatherFilter()
+{
+    static JsonDocument filter;
+    if (filter.isNull())
+    {
+        filter["hourly"]["temperature_2m"] = true;
+        filter["hourly"]["weather_code"]   = true;
+    }
+    return filter;
+}
+
+// ================================================================
 // Open-Meteo weather code to emoji + description
 // ================================================================
 static void getWeatherFromCode(int code)
@@ -79,8 +97,8 @@ void Weather_FetchOpenMeteo(void)
     String url = "https://api.open-meteo.com/v1/forecast?"
                  "latitude=22.2783&longitude=114.1747"
                  "&timezone=Asia/Hong_Kong"
-                 "&hourly=temperature_2m,relative_humidity_2m,weather_code"
-                 "&forecast_days=2";
+                 "&hourly=temperature_2m,weather_code"
+                 "&forecast_days=1";
 
     http.begin(url);
     Heap_Log("Weather pre-GET");
@@ -89,39 +107,40 @@ void Weather_FetchOpenMeteo(void)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("Weather post-GET ok");
-        // Stream-parse from the WiFi socket — see Fetch_Citybus_StopETA in BusData.cpp.
         String payload = http.getString();
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
+        DeserializationError error = deserializeJson(
+            doc, payload,
+            DeserializationOption::Filter(weatherFilter()));
         if (!error)
         {
-            JsonArray times = doc["hourly"]["time"].as<JsonArray>();
-            JsonArray temps = doc["hourly"]["temperature_2m"].as<JsonArray>();
-            JsonArray hums = doc["hourly"]["relative_humidity_2m"].as<JsonArray>();
-            JsonArray codes = doc["hourly"]["weather_code"].as<JsonArray>();
-
-            time_t now = time(nullptr); // UTC+8
+            // Open-Meteo's hourly arrays are aligned to local time when
+            // `timezone=` is set, so element N is N:00 of today. Read only
+            // the entry at the current hour — no iteration, no per-hour
+            // timestamp strings kept in memory.
+            time_t now = time(nullptr);
             struct tm t;
             localtime_r(&now, &t);
-            char currentHour[20];
-            snprintf(currentHour, sizeof(currentHour), "%04d-%02d-%02dT%02d:00",
-                     t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour);
-            printf("Current hour: %s\r\n", currentHour);
-            for (size_t i = 0; i < times.size(); i++)
+            int hour = t.tm_hour;  // 0..23
+
+            float temp = doc["hourly"]["temperature_2m"][hour] | -999.0f;
+            int   code = doc["hourly"]["weather_code"][hour]   | -1;
+
+            if (temp > -200.0f && code >= 0)
             {
-                if (strcmp(times[i], currentHour) == 0)
-                {
-                    current_temperature = temps[i];
-                    current_humidity = hums[i];
-                    getWeatherFromCode(codes[i]);
+                current_temperature = temp;
+                getWeatherFromCode(code);
 
-                    // Push the new values to the LVGL UI immediately.
-                    Update_Weather();
+                // Push the new values to the LVGL UI immediately.
+                Update_Weather();
 
-                    printf("Open-Meteo updated: %.1f°C, %d%%, %s\r\n",
-                           current_temperature, current_humidity, current_weather_desc);
-                    break;
-                }
+                printf("Open-Meteo updated: %.1f°C, %s (hour=%d)\r\n",
+                       current_temperature, current_weather_desc, hour);
+            }
+            else
+            {
+                printf("Open-Meteo: missing data at hour=%d (temp=%.1f code=%d)\n",
+                       hour, temp, code);
             }
         }
     }

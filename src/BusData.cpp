@@ -153,6 +153,30 @@ static void rebuildDisplayList()
 }
 
 // ================================================================
+// Field filter shared by KMB and CTB ETA fetches.
+// Drops the ~8 unused fields per array element (co, dest_sc, dest_en,
+// service_type, seq, rmk_tc, rmk_sc, rmk_en) at parse time, shrinking the
+// in-memory JsonDocument by ~60% without touching the existing parse loops.
+// `dest_tc` (KMB) and `dest` (CTB) are both listed; the other operator's
+// key is simply absent in the response, which is harmless.
+// ================================================================
+static const JsonDocument &busEtaFilter()
+{
+    static JsonDocument filter;
+    if (filter.isNull())
+    {
+        filter["data"][0]["route"]          = true;
+        filter["data"][0]["dir"]            = true;
+        filter["data"][0]["eta_seq"]        = true;
+        filter["data"][0]["eta"]            = true;
+        filter["data"][0]["dest_tc"]        = true;  // KMB
+        filter["data"][0]["dest"]           = true;  // CTB
+        filter["data"][0]["data_timestamp"] = true;
+    }
+    return filter;
+}
+
+// ================================================================
 // Citybus Batch Stop ETA (all routes for this stop in one call)
 // ================================================================
 void Fetch_Citybus_StopETA(const char *stop_id)
@@ -174,10 +198,12 @@ void Fetch_Citybus_StopETA(const char *stop_id)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("Citybus post-GET ok");
-        // Stream-parse from the WiFi socket — avoids materialising a 20-50 KB
-        // String in PSRAM (which contended with the RGB EDMA and caused drift).
+        // Stream-parse from the WiFi socket + key filter (see busEtaFilter)
+        // so the doc only retains the 7 fields per element we actually use.
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, http.getStream());
+        DeserializationError error = deserializeJson(
+            doc, http.getStream(),
+            DeserializationOption::Filter(busEtaFilter()));
 
         if (!error && doc["data"].is<JsonArray>())
         {
@@ -233,9 +259,11 @@ void Fetch_KMB_StopETA(const char *stop_id)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("KMB post-GET ok");
-        // Stream-parse from the WiFi socket — see Fetch_Citybus_StopETA for rationale.
+        // Stream-parse + key filter (busEtaFilter) — same rationale as CTB.
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, http.getStream());
+        DeserializationError error = deserializeJson(
+            doc, http.getStream(),
+            DeserializationOption::Filter(busEtaFilter()));
 
         if (!error && doc["data"].is<JsonArray>())
         {
