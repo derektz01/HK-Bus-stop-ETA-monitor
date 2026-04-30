@@ -51,6 +51,16 @@ static void networkTask(void *)
     vTaskDelay(pdMS_TO_TICKS(2000));
   }
 
+  // Wall clock is now valid. Re-paint everything that depends on time —
+  // setup() may have run these while NTP was still pre-2020 (showing
+  // 1970-01-01, "還有999天", wrong day/night background, etc.). Each call
+  // is cheap thanks to change-detection; if the value is already correct
+  // it returns before touching LVGL.
+  Update_Time();
+  Update_Date_And_Weekday();
+  Update_Holiday_Display();
+  Update_Background();
+
   Weather_FetchOpenMeteo();
   {
     const Config &cfg = ConfigMgr.getConfig();
@@ -150,6 +160,7 @@ void loop()
   static unsigned long lastSlideshow = 0;
   static unsigned long lastHolidayUpdate = 0;
   static unsigned long lastBackgroundCheck = 0;
+  static unsigned long lastWifiInfoCycle = 0;
   static unsigned long bootTime = millis();
   static bool wifiInfoHidden = false;
 
@@ -172,6 +183,15 @@ void loop()
     HideWifiInfo();
     wifiInfoHidden = true;
     printf("WiFi info hidden after 120 seconds\n");
+  }
+
+  // While the wifi-info banner is visible, rotate it through its frames every
+  // 5 s so the user can read the SSID, password (AP mode), and the setup URL
+  // without needing a scrolling animation.
+  if (!wifiInfoHidden && (millis() - lastWifiInfoCycle > 5000))
+  {
+    lastWifiInfoCycle = millis();
+    Cycle_Wifi_Info();
   }
 
   // Update time every second

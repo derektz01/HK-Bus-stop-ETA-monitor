@@ -121,6 +121,11 @@ static void handleNotFound()
 void WebPortal_Begin()
 {
   server.serveStatic("/", LittleFS, "/index.html");
+  server.serveStatic("/leaflet.js", LittleFS, "/leaflet.js");
+  server.serveStatic("/leaflet.css", LittleFS, "/leaflet.css");
+  server.serveStatic("/leaflet.markercluster.js", LittleFS, "/leaflet.markercluster.js");
+  server.serveStatic("/MarkerCluster.css", LittleFS, "/MarkerCluster.css");
+  server.serveStatic("/MarkerCluster.Default.css", LittleFS, "/MarkerCluster.Default.css");
   server.on("/api/config", HTTP_GET, handleGetConfig);
   server.on("/api/config", HTTP_POST, handlePostConfig);
   server.on("/api/reboot", HTTP_POST, handlePostReboot);

@@ -83,3 +83,42 @@ String GetWiFiInfoString()
 
   return String(info);
 }
+
+// Cycle-friendly form: short fragments that each fit in a static label.
+// Each call returns one frame; the display layer rotates the index every few
+// seconds so the user sees all of them in sequence — no scrolling animation
+// (which previously caused PSRAM-bandwidth contention with the LCD EDMA).
+int GetWiFiInfoFrameCount()
+{
+  if (WiFi.getMode() == WIFI_AP) return 3;
+  if (WiFi.status() == WL_CONNECTED) return 2;
+  return 1;
+}
+
+void GetWiFiInfoFrame(int frameIndex, char *out, size_t outSize)
+{
+  if (!out || outSize == 0) return;
+
+  if (WiFi.getMode() == WIFI_AP)
+  {
+    const Config &cfg = ConfigMgr.getConfig();
+    switch (((frameIndex % 3) + 3) % 3)
+    {
+      case 0: snprintf(out, outSize, "AP: %s",            WiFi.softAPSSID().c_str());          break;
+      case 1: snprintf(out, outSize, "Pwd: %s",           cfg.ap_pass.c_str());                break;
+      case 2: snprintf(out, outSize, "Setup: http://%s",  WiFi.softAPIP().toString().c_str()); break;
+    }
+  }
+  else if (WiFi.status() == WL_CONNECTED)
+  {
+    switch (((frameIndex % 2) + 2) % 2)
+    {
+      case 0: snprintf(out, outSize, "WiFi: %s",          WiFi.SSID().c_str());                break;
+      case 1: snprintf(out, outSize, "Setup: http://%s",  WiFi.localIP().toString().c_str());  break;
+    }
+  }
+  else
+  {
+    snprintf(out, outSize, "WiFi Not Connected");
+  }
+}

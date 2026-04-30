@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bus ETA Monitor - Setup</title>
+<link rel="stylesheet" href="/leaflet.css">
+<link rel="stylesheet" href="/MarkerCluster.css">
+<link rel="stylesheet" href="/MarkerCluster.Default.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -99,6 +102,44 @@
 
   .stop-section { margin-bottom: 14px; }
   .stop-section > label { margin-bottom: 6px; font-weight: 600; }
+
+  .cache-card {
+    border: 1px solid #e2e5e9;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fafbfc;
+    margin-bottom: 14px;
+  }
+  .cache-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2a5fb2;
+    margin-bottom: 8px;
+  }
+  .cache-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cache-row + .cache-row { margin-top: 4px; }
+  .cache-row-info { flex: 1; min-width: 0; }
+  .cache-row-name { font-size: 14px; font-weight: 600; }
+  .cache-row-meta {
+    font-size: 12px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cache-row-meta.empty { color: #999; font-style: italic; }
+  .cache-status {
+    font-size: 12px;
+    color: #666;
+    margin: 4px 2px 4px;
+    min-height: 0;
+  }
+  .cache-status:empty { display: none; }
+  .cache-status.err { color: #c0392b; }
   .selected-list {
     border: 1px solid #e2e5e9;
     border-radius: 6px;
@@ -143,10 +184,40 @@
   }
   .stop-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 4px;
   }
-  .stop-buttons .btn { flex: 1; }
+  .stop-buttons .btn { flex: 1 1 30%; }
+
+  .bus-map {
+    height: 360px;
+    border-radius: 6px;
+    margin-top: 8px;
+    border: 1px solid #e2e5e9;
+    z-index: 0;
+  }
+  .map-banner {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .map-popup-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    max-width: 220px;
+  }
+  .map-popup-id {
+    font-family: monospace;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 8px;
+  }
 
   .manual-entry {
     display: flex;
@@ -270,12 +341,38 @@
     <fieldset>
       <legend>Bus Stops</legend>
 
+      <div class="cache-card">
+        <div class="cache-card-title">Stop list cache</div>
+        <div class="cache-row">
+          <div class="cache-row-info">
+            <div class="cache-row-name">KMB</div>
+            <div class="cache-row-meta empty" id="kmb-cache-meta">Not cached yet</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-refresh">Rebuild stop list</button>
+        </div>
+        <div class="cache-status" id="kmb-status"></div>
+        <div class="cache-row">
+          <div class="cache-row-info">
+            <div class="cache-row-name">Citybus</div>
+            <div class="cache-row-meta empty" id="ctb-cache-meta">Not cached yet</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-refresh">Rebuild stop list</button>
+        </div>
+        <div class="cache-status" id="ctb-status"></div>
+      </div>
+
       <div class="stop-section">
         <label>KMB Stop IDs</label>
         <div class="selected-list" id="kmb-selected"></div>
         <div class="stop-buttons">
           <button type="button" class="btn btn-secondary btn-small" id="kmb-search-toggle">Search by name</button>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-map-toggle">Pick on map</button>
           <button type="button" class="btn btn-secondary btn-small" id="kmb-manual-toggle">+ Add manually</button>
+        </div>
+        <div id="kmb-map-wrap" hidden>
+          <div class="stop-status" id="kmb-map-status"></div>
+          <div class="map-banner" id="kmb-map-banner" hidden>Map tiles unavailable — check internet, or use Search by name.</div>
+          <div class="bus-map" id="kmb-map"></div>
         </div>
         <div class="manual-entry" id="kmb-manual" hidden>
           <input type="text" id="kmb-manual-input" placeholder="Enter KMB stop ID">
@@ -283,10 +380,7 @@
         </div>
         <div class="stop-search" id="kmb-search" hidden>
           <input type="text" id="kmb-query" placeholder="輸入站名 (e.g. 觀塘)">
-          <div class="search-controls">
-            <button type="button" class="btn btn-secondary btn-small" id="kmb-refresh">Rebuild stop list</button>
-          </div>
-          <div class="stop-status" id="kmb-status"></div>
+          <div class="stop-status" id="kmb-search-status"></div>
           <div class="stop-results" id="kmb-results"></div>
         </div>
       </div>
@@ -296,7 +390,13 @@
         <div class="selected-list" id="ctb-selected"></div>
         <div class="stop-buttons">
           <button type="button" class="btn btn-secondary btn-small" id="ctb-search-toggle">Search by name</button>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-map-toggle">Pick on map</button>
           <button type="button" class="btn btn-secondary btn-small" id="ctb-manual-toggle">+ Add manually</button>
+        </div>
+        <div id="ctb-map-wrap" hidden>
+          <div class="stop-status" id="ctb-map-status"></div>
+          <div class="map-banner" id="ctb-map-banner" hidden>Map tiles unavailable — check internet, or use Search by name.</div>
+          <div class="bus-map" id="ctb-map"></div>
         </div>
         <div class="manual-entry" id="ctb-manual" hidden>
           <input type="text" id="ctb-manual-input" placeholder="Enter CTB stop ID (6 digits)">
@@ -304,10 +404,7 @@
         </div>
         <div class="stop-search" id="ctb-search" hidden>
           <input type="text" id="ctb-query" placeholder="輸入站名 (e.g. 中環)">
-          <div class="search-controls">
-            <button type="button" class="btn btn-secondary btn-small" id="ctb-refresh">Rebuild stop list</button>
-          </div>
-          <div class="stop-status" id="ctb-status"></div>
+          <div class="stop-status" id="ctb-search-status"></div>
           <div class="stop-results" id="ctb-results"></div>
         </div>
       </div>
@@ -323,6 +420,8 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="/leaflet.js"></script>
+<script src="/leaflet.markercluster.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -440,6 +539,7 @@
       row.appendChild(rm);
       el.appendChild(row);
     }
+    refreshMapMarkerStyles(kind);
   }
 
   function addSelected(kind, id) {
@@ -483,11 +583,26 @@
   var kmbStops = null;
   var kmbBuilding = false;
   var KMB_RESULT_LIMIT = 100;
-  var KMB_CACHE_KEY = 'kmbStops.v1';
-  var KMB_CACHE_TS_KEY = 'kmbStops.v1.ts';
+  var KMB_CACHE_KEY = 'kmbStops.v2';
+  var KMB_CACHE_TS_KEY = 'kmbStops.v2.ts';
   var KMB_URL = 'https://data.etabus.gov.hk/v1/transport/kmb/stop';
 
   function setKmbStatus(msg) { $('kmb-status').textContent = msg; }
+  function setKmbSearchStatus(msg) { $('kmb-search-status').textContent = msg; }
+
+  function updateCacheMeta(prefix) {
+    var el = $(prefix + '-cache-meta');
+    var stops = (prefix === 'kmb') ? kmbStops : ctbStops;
+    var tsKey = (prefix === 'kmb') ? KMB_CACHE_TS_KEY : CTB_CACHE_TS_KEY;
+    if (!stops || stops.length === 0) {
+      el.textContent = 'Not cached yet';
+      el.classList.add('empty');
+      return;
+    }
+    var date = formatCacheTimestamp(localStorage.getItem(tsKey));
+    el.textContent = stops.length.toLocaleString() + ' stops · built ' + (date || 'unknown');
+    el.classList.remove('empty');
+  }
 
   function loadKmbCache() {
     try {
@@ -514,10 +629,6 @@
            ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  function kmbCacheDateLabel() {
-    return formatCacheTimestamp(localStorage.getItem(KMB_CACHE_TS_KEY));
-  }
-
   function buildKmbStops() {
     if (kmbBuilding) return Promise.resolve();
     kmbBuilding = true;
@@ -533,11 +644,19 @@
         var out = [];
         for (var i = 0; i < list.length; i++) {
           var s = list[i];
-          if (s && s.name_tc) out.push({ id: s.stop, name: s.name_tc });
+          if (s && s.name_tc) {
+            out.push({
+              id: s.stop,
+              name: s.name_tc,
+              lat: parseFloat(s.lat),
+              lng: parseFloat(s.long)
+            });
+          }
         }
         kmbStops = out;
         saveKmbCache(out);
-        setKmbStatus(out.length + ' stops loaded (cached ' + kmbCacheDateLabel() + '). Type to filter.');
+        setKmbStatus('');
+        updateCacheMeta('kmb');
         renderSelected('kmb');
         renderKmbResults($('kmb-query').value);
       })
@@ -556,7 +675,8 @@
     var cached = loadKmbCache();
     if (cached && cached.length > 0) {
       kmbStops = cached;
-      setKmbStatus(kmbStops.length + ' stops loaded from cache (' + kmbCacheDateLabel() + '). Type to filter.');
+      setKmbStatus('');
+      updateCacheMeta('kmb');
       renderSelected('kmb');
       return Promise.resolve();
     }
@@ -569,7 +689,7 @@
     if (!kmbStops) return;
     q = (q || '').trim();
     if (q.length === 0) {
-      setKmbStatus(kmbStops.length + ' stops loaded (cached ' + kmbCacheDateLabel() + '). Type to filter.');
+      setKmbSearchStatus('');
       return;
     }
     var matches = [];
@@ -577,7 +697,7 @@
       if (kmbStops[i].name.indexOf(q) !== -1) matches.push(kmbStops[i]);
     }
     var shown = Math.min(matches.length, KMB_RESULT_LIMIT);
-    setKmbStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
+    setKmbSearchStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
     for (var j = 0; j < shown; j++) {
       var s = matches[j];
       var row = document.createElement('div');
@@ -647,10 +767,11 @@
   var CTB_RESULT_LIMIT = 100;
   var CTB_API = 'https://rt.data.gov.hk/v2/transport/citybus';
   var CTB_CONCURRENCY = 10;
-  var CTB_CACHE_KEY = 'ctbStops.v1';
-  var CTB_CACHE_TS_KEY = 'ctbStops.v1.ts';
+  var CTB_CACHE_KEY = 'ctbStops.v2';
+  var CTB_CACHE_TS_KEY = 'ctbStops.v2.ts';
 
   function setCtbStatus(msg) { $('ctb-status').textContent = msg; }
+  function setCtbSearchStatus(msg) { $('ctb-search-status').textContent = msg; }
 
   function runInBatches(items, batchSize, worker) {
     var i = 0;
@@ -677,10 +798,6 @@
       localStorage.setItem(CTB_CACHE_KEY, JSON.stringify(stops));
       localStorage.setItem(CTB_CACHE_TS_KEY, new Date().toISOString());
     } catch (e) { toast('Could not save CTB cache', 'err'); }
-  }
-
-  function ctbCacheDateLabel() {
-    return formatCacheTimestamp(localStorage.getItem(CTB_CACHE_TS_KEY));
   }
 
   function buildCtbStops() {
@@ -745,7 +862,12 @@
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
               if (d && d.data && d.data.name_tc) {
-                results.push({ id: id, name: d.data.name_tc });
+                results.push({
+                  id: id,
+                  name: d.data.name_tc,
+                  lat: parseFloat(d.data.lat),
+                  lng: parseFloat(d.data.long)
+                });
               }
             })
             .catch(function () {})
@@ -759,7 +881,8 @@
           results.sort(function (a, b) { return a.name.localeCompare(b.name); });
           ctbStops = results;
           saveCtbCache(results);
-          setCtbStatus(results.length + ' stops loaded (cached ' + ctbCacheDateLabel() + '). Type to filter.');
+          setCtbStatus('');
+          updateCacheMeta('ctb');
           renderSelected('ctb');
           renderCtbResults($('ctb-query').value);
         });
@@ -778,7 +901,8 @@
     var cached = loadCtbCache();
     if (cached && cached.length > 0) {
       ctbStops = cached;
-      setCtbStatus(ctbStops.length + ' stops loaded from cache (' + ctbCacheDateLabel() + '). Type to filter.');
+      setCtbStatus('');
+      updateCacheMeta('ctb');
       renderSelected('ctb');
       return Promise.resolve();
     }
@@ -792,7 +916,7 @@
     if (!ctbStops) return;
     q = (q || '').trim();
     if (q.length === 0) {
-      setCtbStatus(ctbStops.length + ' stops loaded (cached ' + ctbCacheDateLabel() + '). Type to filter.');
+      setCtbSearchStatus('');
       return;
     }
     var matches = [];
@@ -800,7 +924,7 @@
       if (ctbStops[i].name.indexOf(q) !== -1) matches.push(ctbStops[i]);
     }
     var shown = Math.min(matches.length, CTB_RESULT_LIMIT);
-    setCtbStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
+    setCtbSearchStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
     for (var j = 0; j < shown; j++) {
       var s = matches[j];
       var row = document.createElement('div');
@@ -862,6 +986,133 @@
       toast('Added', 'ok');
     }
   };
+
+  // ==========================================================================
+  // Map (Leaflet + OSM tiles, marker clustering)
+  // ==========================================================================
+  var maps = { kmb: null, ctb: null };
+  var markerById = { kmb: {}, ctb: {} };
+  var HK_CENTER = [22.305, 114.17];
+  var COLOR_UNSELECTED = '#2a5fb2';
+  var COLOR_SELECTED = '#28a745';
+
+  function buildPopupContent(prefix, stop, marker) {
+    var div = document.createElement('div');
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'map-popup-name';
+    nameDiv.textContent = stop.name;
+    var idDiv = document.createElement('div');
+    idDiv.className = 'map-popup-id';
+    idDiv.textContent = stop.id;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-secondary btn-small';
+    var isSel = (selected[prefix].indexOf(stop.id) !== -1);
+    btn.textContent = isSel ? 'Already added' : 'Add this stop';
+    btn.disabled = isSel;
+    btn.onclick = function () {
+      if (addSelected(prefix, stop.id)) {
+        toast('Added ' + stop.name, 'ok');
+        marker.setStyle({ color: COLOR_SELECTED, fillColor: COLOR_SELECTED });
+        btn.textContent = 'Already added';
+        btn.disabled = true;
+      }
+    };
+    div.appendChild(nameDiv);
+    div.appendChild(idDiv);
+    div.appendChild(btn);
+    return div;
+  }
+
+  function initMap(prefix) {
+    if (maps[prefix]) return true;
+    var stops = (prefix === 'kmb') ? kmbStops : ctbStops;
+    if (!stops || stops.length === 0) return false;
+
+    var map = L.map(prefix + '-map', { preferCanvas: true }).setView(HK_CENTER, 11);
+    var banner = $(prefix + '-map-banner');
+    var tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    });
+    var tileErrorCount = 0;
+    tileLayer.on('tileerror', function () {
+      tileErrorCount++;
+      if (tileErrorCount >= 3) banner.hidden = false;
+    });
+    tileLayer.on('tileload', function () {
+      tileErrorCount = 0;
+      banner.hidden = true;
+    });
+    tileLayer.addTo(map);
+
+    var cluster = L.markerClusterGroup({ maxClusterRadius: 60, chunkedLoading: true });
+    var added = 0;
+    var by = {};
+    for (var i = 0; i < stops.length; i++) {
+      var s = stops[i];
+      if (typeof s.lat !== 'number' || typeof s.lng !== 'number' ||
+          isNaN(s.lat) || isNaN(s.lng)) continue;
+      var isSel = (selected[prefix].indexOf(s.id) !== -1);
+      var color = isSel ? COLOR_SELECTED : COLOR_UNSELECTED;
+      var marker = L.circleMarker([s.lat, s.lng], {
+        radius: 5,
+        color: color,
+        weight: 1,
+        fillColor: color,
+        fillOpacity: 0.85
+      });
+      (function (m, stop) {
+        m.bindPopup(function () { return buildPopupContent(prefix, stop, m); });
+      })(marker, s);
+      by[s.id] = marker;
+      cluster.addLayer(marker);
+      added++;
+    }
+    cluster.addTo(map);
+    markerById[prefix] = by;
+    maps[prefix] = map;
+
+    var status = $(prefix + '-map-status');
+    status.textContent = added + ' stops shown. Tap a pin to add.';
+    return true;
+  }
+
+  function refreshMapMarkerStyles(prefix) {
+    if (!maps[prefix]) return;
+    var by = markerById[prefix] || {};
+    var sel = selected[prefix];
+    Object.keys(by).forEach(function (id) {
+      var color = (sel.indexOf(id) !== -1) ? COLOR_SELECTED : COLOR_UNSELECTED;
+      by[id].setStyle({ color: color, fillColor: color });
+    });
+  }
+
+  function openMapPanel(prefix, ensureFn) {
+    var box = $(prefix + '-map-wrap');
+    var btn = $(prefix + '-map-toggle');
+    var status = $(prefix + '-map-status');
+    box.hidden = !box.hidden;
+    btn.textContent = box.hidden ? 'Pick on map' : 'Close map';
+    if (box.hidden) return;
+
+    var stops = (prefix === 'kmb') ? kmbStops : ctbStops;
+    if (!stops || stops.length === 0) {
+      status.textContent = 'Loading stop list...';
+    }
+    ensureFn().then(function () {
+      var ok = initMap(prefix);
+      if (!ok) {
+        status.textContent = 'No stop list available. Use "Rebuild stop list" first.';
+        return;
+      }
+      setTimeout(function () { maps[prefix].invalidateSize(); }, 50);
+      refreshMapMarkerStyles(prefix);
+    });
+  }
+
+  $('kmb-map-toggle').onclick = function () { openMapPanel('kmb', ensureKmbStops); };
+  $('ctb-map-toggle').onclick = function () { openMapPanel('ctb', ensureCtbStops); };
 
   // ==========================================================================
   // Wi-Fi password toggle, Save, Reboot
@@ -946,6 +1197,8 @@
   if (warmKmb) { kmbStops = warmKmb; renderSelected('kmb'); }
   var warmCtb = loadCtbCache();
   if (warmCtb) { ctbStops = warmCtb; renderSelected('ctb'); }
+  updateCacheMeta('kmb');
+  updateCacheMeta('ctb');
 })();
 </script>
 </body>

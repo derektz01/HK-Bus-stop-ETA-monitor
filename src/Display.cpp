@@ -139,6 +139,14 @@ void Update_Holiday_Display()
     if (holidayDoc["holidays"].isNull()) {
         snprintf(info, sizeof(info), "公眾假期資料載入失敗");
         printf("Holiday data not loaded - using fallback\n");
+    } else if (time(nullptr) < 1577836800) {
+        // Wall clock not synced (system still on 1970 epoch). Without this
+        // guard, every 2026 holiday is ~20 000 days away → no `daysLeft`
+        // beats the sentinel, `minDays` stays at 999, and the label reads
+        // "還有999天". The networkTask re-invokes us once SNTP delivers
+        // a real timestamp.
+        snprintf(info, sizeof(info), "等待網絡時間同步...");
+        printf("Holiday display deferred — wall clock not synced\n");
     } else {
         time_t now = time(nullptr);
         struct tm today;
@@ -304,15 +312,49 @@ void Update_Background()
 // ============================================================================
 // Wi-Fi info banner (replaces Nextion gWifiInfo scrolling text)
 // ============================================================================
+// Cycle state for the wifi-info banner. The label is too narrow for the full
+// "AP:<ssid> P:<pwd> IP:<ip>" string and we don't want the scrolling animation
+// (PSRAM-bandwidth contention with the LCD EDMA). Instead we rotate through
+// short frames; the loop calls Cycle_Wifi_Info() every few seconds to advance.
+static int  s_wifiFrame          = 0;
+static char s_wifiLastText[80]   = "";
+
+static void paintWifiFrame(int frameIndex)
+{
+    char buf[80];
+    GetWiFiInfoFrame(frameIndex, buf, sizeof(buf));
+    if (strcmp(buf, s_wifiLastText) == 0) return;
+    strncpy(s_wifiLastText, buf, sizeof(s_wifiLastText) - 1);
+    s_wifiLastText[sizeof(s_wifiLastText) - 1] = '\0';
+
+    WITH_LVGL();
+    lv_label_set_text(ui_lblWifiInfo, buf);
+}
+
 void ShowWifiInfo()
 {
-    String info = GetWiFiInfoString();
+    s_wifiFrame       = 0;
+    s_wifiLastText[0] = '\0';   // force first paint via cache miss
+
+    char buf[80];
+    GetWiFiInfoFrame(0, buf, sizeof(buf));
+    strncpy(s_wifiLastText, buf, sizeof(s_wifiLastText) - 1);
+    s_wifiLastText[sizeof(s_wifiLastText) - 1] = '\0';
+
     WITH_LVGL();
-    lv_label_set_text(ui_lblWifiInfo, info.c_str());
-    // Translucent backdrop (alpha 150/255) so the scrolling SSID/IP stays
-    // readable against any background image.
+    lv_label_set_text(ui_lblWifiInfo, buf);
+    // Translucent backdrop (alpha 150/255) so the SSID/IP stays readable
+    // against any background image.
     lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_clear_flag(ui_lblWifiInfo, LV_OBJ_FLAG_HIDDEN);
+}
+
+void Cycle_Wifi_Info()
+{
+    int count = GetWiFiInfoFrameCount();
+    if (count <= 0) return;
+    s_wifiFrame = (s_wifiFrame + 1) % count;
+    paintWifiFrame(s_wifiFrame);
 }
 
 void HideWifiInfo()

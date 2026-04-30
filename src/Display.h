@@ -8,6 +8,7 @@ void Display_Init(void);
 
 void ShowWifiInfo(void);
 void HideWifiInfo(void);
+void Cycle_Wifi_Info(void);   // Advance the wifi-info banner to the next frame
 
 void Update_Time(void);
 void Update_Date_And_Weekday(void);

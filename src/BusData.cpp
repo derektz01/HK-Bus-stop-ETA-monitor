@@ -285,7 +285,7 @@ void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
         if (id.length() == 0)
             continue;
         Fetch_KMB_StopETA(id.c_str());
-        delay(100);
+        delay(200);
     }
 
     for (const String &id : ctb_stop_ids)
@@ -293,7 +293,7 @@ void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
         if (id.length() == 0)
             continue;
         Fetch_Citybus_StopETA(id.c_str());
-        delay(100);
+        delay(200);
     }
 
     rebuildDisplayList();
