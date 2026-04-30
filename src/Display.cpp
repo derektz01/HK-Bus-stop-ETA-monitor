@@ -74,6 +74,10 @@ void Update_Time()
     char s[6];
     snprintf(s, sizeof(s), "%02d:%02d", t.tm_hour, t.tm_min);
 
+    // HH:MM only changes once per minute; skip ~59 of every 60 calls.
+    static char last[6] = "";
+    if (strcmp(s, last) == 0) return;
+    strcpy(last, s);
     WITH_LVGL();
     lv_label_set_text(ui_lblNowTime, s);
 }
@@ -89,21 +93,37 @@ void Update_Date_And_Weekday()
     snprintf(s, sizeof(s), "%04d年%02d月%02d日(%s)",
              t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, weekdays[t.tm_wday]);
 
+    // Date string only changes once per day.
+    static char last[40] = "";
+    if (strcmp(s, last) == 0) return;
+    strcpy(last, s);
+
     WITH_LVGL();
     lv_label_set_text(ui_lblNowDate, s);
 }
 
 // ============================================================================
-// Weather (function name kept for caller compatibility)
+// Weather
 // ============================================================================
-void Update_Weather_On_Nextion()
+void Update_Weather()
 {
     char temp[16];
     snprintf(temp, sizeof(temp), "%.1f", current_temperature);
 
+    static char lastTemp[16] = "";
+    static char lastDesc[32] = "";
+    bool tempChanged = strcmp(temp, lastTemp) != 0;
+    bool descChanged = strcmp(current_weather_desc, lastDesc) != 0;
+    if (!tempChanged && !descChanged) return;
+    if (tempChanged) strcpy(lastTemp, temp);
+    if (descChanged) {
+        strncpy(lastDesc, current_weather_desc, sizeof(lastDesc) - 1);
+        lastDesc[sizeof(lastDesc) - 1] = '\0';
+    }
+    printf("Weather updated → %s, %.1f°C\n", current_weather_desc, current_temperature);
     WITH_LVGL();
-    lv_label_set_text(ui_lblTemp, temp);
-    lv_label_set_text(ui_lblWeather, current_weather_desc);
+    if (tempChanged) lv_label_set_text(ui_lblTemp, temp);
+    if (descChanged) lv_label_set_text(ui_lblWeather, current_weather_desc);
 }
 
 // ============================================================================
@@ -111,69 +131,75 @@ void Update_Weather_On_Nextion()
 // ============================================================================
 void Update_Holiday_Display()
 {
-    if (holidayDoc["holidays"].isNull()) {
-        WITH_LVGL();
-        lv_label_set_text(ui_lblHolidayInfo, "公眾假期資料載入失敗");
-        lv_label_set_text(ui_lblHolidayDate, "-");
-        printf("Holiday data not loaded - using fallback\n");
-        return;
-    }
-
-    time_t now = time(nullptr);
-    struct tm today;
-    localtime_r(&now, &today);
-    time_t todaySeconds = mktime(&today);
-
+    char info[96]        = "";
+    char dateDisplay[40] = "-";
     String nextHolidayName;
-    String nextHolidayDate;
     int minDays = 999;
 
-    JsonArray holidays = holidayDoc["holidays"].as<JsonArray>();
-    for (JsonObject h : holidays) {
-        const char *dateStr = h["date"]    | "";
-        const char *name    = h["name_tc"] | "";
+    if (holidayDoc["holidays"].isNull()) {
+        snprintf(info, sizeof(info), "公眾假期資料載入失敗");
+        printf("Holiday data not loaded - using fallback\n");
+    } else {
+        time_t now = time(nullptr);
+        struct tm today;
+        localtime_r(&now, &today);
+        time_t todaySeconds = mktime(&today);
 
-        struct tm holidayTm = {};
-        sscanf(dateStr, "%4d-%2d-%2d", &holidayTm.tm_year, &holidayTm.tm_mon, &holidayTm.tm_mday);
-        holidayTm.tm_year -= 1900;
-        holidayTm.tm_mon  -= 1;
-        time_t holidaySeconds = mktime(&holidayTm);
+        String nextHolidayDate;
 
-        int daysLeft = (int)difftime(holidaySeconds, todaySeconds) / (60 * 60 * 24);
-        if (daysLeft >= 0 && daysLeft < minDays) {
-            minDays = daysLeft;
-            nextHolidayName = name;
-            nextHolidayDate = dateStr;
+        JsonArray holidays = holidayDoc["holidays"].as<JsonArray>();
+        for (JsonObject h : holidays) {
+            const char *dateStr = h["date"]    | "";
+            const char *name    = h["name_tc"] | "";
+
+            struct tm holidayTm = {};
+            sscanf(dateStr, "%4d-%2d-%2d", &holidayTm.tm_year, &holidayTm.tm_mon, &holidayTm.tm_mday);
+            holidayTm.tm_year -= 1900;
+            holidayTm.tm_mon  -= 1;
+            time_t holidaySeconds = mktime(&holidayTm);
+
+            int daysLeft = (int)difftime(holidaySeconds, todaySeconds) / (60 * 60 * 24);
+            if (daysLeft >= 0 && daysLeft < minDays) {
+                minDays = daysLeft;
+                nextHolidayName = name;
+                nextHolidayDate = dateStr;
+            }
+        }
+
+        if (minDays == 0) {
+            snprintf(info, sizeof(info), "%s", nextHolidayName.c_str());
+        } else {
+            snprintf(info, sizeof(info), "%s還有%d天", nextHolidayName.c_str(), minDays);
+        }
+
+        if (nextHolidayDate.length() > 0) {
+            struct tm nextDate = {};
+            sscanf(nextHolidayDate.c_str(), "%4d-%2d-%2d",
+                   &nextDate.tm_year, &nextDate.tm_mon, &nextDate.tm_mday);
+            nextDate.tm_year -= 1900;
+            nextDate.tm_mon  -= 1;
+            mktime(&nextDate);
+            static const char *weekdays[] = {"日", "一", "二", "三", "四", "五", "六"};
+            snprintf(dateDisplay, sizeof(dateDisplay), "%04d年%02d月%02d日(%s)",
+                     nextDate.tm_year + 1900,
+                     nextDate.tm_mon + 1,
+                     nextDate.tm_mday,
+                     weekdays[nextDate.tm_wday]);
         }
     }
 
-    char info[96];
-    if (minDays == 0) {
-        snprintf(info, sizeof(info), "%s", nextHolidayName.c_str());
-    } else {
-        snprintf(info, sizeof(info), "%s還有%d天", nextHolidayName.c_str(), minDays);
-    }
-
-    char dateDisplay[40] = "-";
-    if (nextHolidayDate.length() > 0) {
-        struct tm nextDate = {};
-        sscanf(nextHolidayDate.c_str(), "%4d-%2d-%2d",
-               &nextDate.tm_year, &nextDate.tm_mon, &nextDate.tm_mday);
-        nextDate.tm_year -= 1900;
-        nextDate.tm_mon  -= 1;
-        mktime(&nextDate);
-        static const char *weekdays[] = {"日", "一", "二", "三", "四", "五", "六"};
-        snprintf(dateDisplay, sizeof(dateDisplay), "%04d年%02d月%02d日(%s)",
-                 nextDate.tm_year + 1900,
-                 nextDate.tm_mon + 1,
-                 nextDate.tm_mday,
-                 weekdays[nextDate.tm_wday]);
-    }
+    static char lastInfo[96] = "";
+    static char lastDate[40] = "";
+    bool infoChanged = strcmp(info, lastInfo) != 0;
+    bool dateChanged = strcmp(dateDisplay, lastDate) != 0;
+    if (!infoChanged && !dateChanged) return;
+    if (infoChanged) strcpy(lastInfo, info);
+    if (dateChanged) strcpy(lastDate, dateDisplay);
 
     {
         WITH_LVGL();
-        lv_label_set_text(ui_lblHolidayInfo, info);
-        lv_label_set_text(ui_lblHolidayDate, dateDisplay);
+        if (infoChanged) lv_label_set_text(ui_lblHolidayInfo, info);
+        if (dateChanged) lv_label_set_text(ui_lblHolidayDate, dateDisplay);
     }
     printf("Holiday updated → %s 還有 %d 天\n", nextHolidayName.c_str(), minDays);
 }
@@ -183,15 +209,19 @@ void Update_Holiday_Display()
 // ============================================================================
 void Update_Bus_List()
 {
-    int start = currentPage * 4;
-    int total = (int)displayRoutes.size();
-
     lv_obj_t *route[4] = { ui_lblRoute1, ui_lblRoute2, ui_lblRoute3, ui_lblRoute4 };
     lv_obj_t *eta1[4]  = { ui_lblETA11,  ui_lblETA21,  ui_lblETA31,  ui_lblETA41 };
     lv_obj_t *eta2[4]  = { ui_lblETA12,  ui_lblETA22,  ui_lblETA32,  ui_lblETA42 };
     lv_obj_t *dest[4]  = { ui_lblDest1,  ui_lblDest2,  ui_lblDest3,  ui_lblDest4 };
 
+    // Lock order rule: WITH_LVGL first, then BusData_Lock — never the reverse.
+    // displayRoutes is written by the network task on core 0; this read runs
+    // on core 1 from the slideshow tick (and on core 0 at the end of fetch).
     WITH_LVGL();
+    BusData_Lock();
+    int page  = currentPage;
+    int start = page * 4;
+    int total = (int)displayRoutes.size();
     for (int s = 0; s < 4; s++) {
         int i = start + s;
         bool has = (i < total);
@@ -208,7 +238,8 @@ void Update_Bus_List()
                    displayRoutes[i].destination);
         }
     }
-    printf("Bus list updated (Page %d, Total: %d routes)\n", currentPage, total);
+    BusData_Unlock();
+    printf("Bus list updated (Page %d, Total: %d routes)\n", page, total);
 }
 
 // ============================================================================
@@ -271,19 +302,6 @@ void HideWifiInfo()
     // Logged outside the LVGL guard so we measure the heap *after* any
     // simple-layer buffer (LV_LAYER_SIMPLE_BUF_SIZE) has been freed.
     Heap_Log("after HideWifiInfo");
-}
-
-// ============================================================================
-// Composite update
-// ============================================================================
-void Update_Full_Display()
-{
-    Update_Time();
-    Update_Date_And_Weekday();
-    Update_Weather_On_Nextion();
-    Update_Holiday_Display();
-    Update_Background();
-    Update_Bus_List();
 }
 
 // ============================================================================

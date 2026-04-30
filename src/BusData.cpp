@@ -12,11 +12,26 @@
 // ================================================================
 // Global storage
 // ================================================================
-std::vector<BusInfo> busList;       // All routes (KMB + Citybus)
-std::vector<BusInfo> displayRoutes; // Sorted for display
+std::vector<BusInfo> busList;       // Staging area, only touched on the fetch task
+std::vector<BusInfo> displayRoutes; // Sorted for display, read by other tasks
 
 uint8_t currentPage = 0;
 const uint8_t ROUTES_PER_PAGE = 4;
+
+// Recursive mutex guarding displayRoutes + currentPage.
+// Lock order rule: take WITH_LVGL FIRST, then BusData_Lock (never the reverse)
+// to avoid deadlock between the LVGL task on core 1 and the network task on core 0.
+static SemaphoreHandle_t s_busMutex = nullptr;
+
+void BusData_Lock()
+{
+    if (s_busMutex) xSemaphoreTakeRecursive(s_busMutex, portMAX_DELAY);
+}
+
+void BusData_Unlock()
+{
+    if (s_busMutex) xSemaphoreGiveRecursive(s_busMutex);
+}
 
 // ================================================================
 // Parse ISO8601 time
@@ -123,13 +138,18 @@ static void addRoute(const char *route, int seq, const char *etaStr, const char 
 // ================================================================
 static void rebuildDisplayList()
 {
-    displayRoutes = busList;
-
-    std::sort(displayRoutes.begin(), displayRoutes.end(), [](const BusInfo &a, const BusInfo &b)
+    // Build sorted list into a local first, then atomically swap under the
+    // mutex so readers on core 1 never see a half-rebuilt vector.
+    std::vector<BusInfo> next = busList;
+    std::sort(next.begin(), next.end(), [](const BusInfo &a, const BusInfo &b)
               {
         int cmp = strcmp(a.route, b.route);
         if (cmp == 0) return strcmp(a.dir, b.dir) < 0;
         return cmp < 0; });
+
+    BusData_Lock();
+    displayRoutes.swap(next);
+    BusData_Unlock();
 }
 
 // ================================================================
@@ -154,9 +174,10 @@ void Fetch_Citybus_StopETA(const char *stop_id)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("Citybus post-GET ok");
-        String payload = http.getString();
+        // Stream-parse from the WiFi socket — avoids materialising a 20-50 KB
+        // String in PSRAM (which contended with the RGB EDMA and caused drift).
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
+        DeserializationError error = deserializeJson(doc, http.getStream());
 
         if (!error && doc["data"].is<JsonArray>())
         {
@@ -188,8 +209,9 @@ void Fetch_Citybus_StopETA(const char *stop_id)
         printf("Citybus batch ETA HTTP %d\n", httpCode);
     }
     http.end();
-
-    rebuildDisplayList();
+    // No rebuildDisplayList() here — AutoRefreshBusETA does it once at the end
+    // of the cycle, so the slideshow tick on core 1 doesn't see a half-built
+    // KMB-only displayRoutes mid-fetch.
 }
 
 // ================================================================
@@ -211,9 +233,9 @@ void Fetch_KMB_StopETA(const char *stop_id)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("KMB post-GET ok");
-        String payload = http.getString();
+        // Stream-parse from the WiFi socket — see Fetch_Citybus_StopETA for rationale.
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
+        DeserializationError error = deserializeJson(doc, http.getStream());
 
         if (!error && doc["data"].is<JsonArray>())
         {
@@ -241,19 +263,21 @@ void Fetch_KMB_StopETA(const char *stop_id)
         printf("KMB stop-ETA HTTP %d\n", httpCode);
     }
     http.end();
-
-    rebuildDisplayList();
+    // No rebuildDisplayList() here — see Fetch_Citybus_StopETA.
 }
 
 // ================================================================
 // Auto Refresh (multi-stop)
 // ================================================================
+extern volatile bool g_apiFetchInProgress;
+
 void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
                        const std::vector<String> &ctb_stop_ids)
 {
     printf("=== Auto Refresh Bus ETA (KMB:%d CTB:%d) ===\r\n",
            (int)kmb_stop_ids.size(), (int)ctb_stop_ids.size());
 
+    g_apiFetchInProgress = true;
     busList.clear();
 
     for (const String &id : kmb_stop_ids)
@@ -274,22 +298,33 @@ void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
 
     rebuildDisplayList();
 
+    BusData_Lock();
     currentPage = 0;
-    printf("Combined ETA updated: %d routes (seq=1 + seq=2)\n", (int)displayRoutes.size());
+    int total = (int)displayRoutes.size();
+    BusData_Unlock();
+
+    printf("Combined ETA updated: %d routes (seq=1 + seq=2)\n", total);
     Update_Bus_List();
+    g_apiFetchInProgress = false;
 }
 
 void BusData_Init()
 {
+    if (!s_busMutex) {
+        s_busMutex = xSemaphoreCreateRecursiveMutex();
+    }
     printf("Bus Data Initialized (KMB + Citybus with seq=1 + seq=2 support)\r\n");
 }
 
 void Switch_To_Next_Page()
 {
+    BusData_Lock();
     int total = displayRoutes.size();
     int maxPage = (total + ROUTES_PER_PAGE - 1) / ROUTES_PER_PAGE - 1;
     if (maxPage < 0)
         maxPage = 0;
     currentPage = (currentPage + 1) % (maxPage + 1);
-    printf("Switched to page %d\n", currentPage);
+    uint8_t page = currentPage;
+    BusData_Unlock();
+    printf("Switched to page %d\n", page);
 }

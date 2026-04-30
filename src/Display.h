@@ -9,11 +9,10 @@ void Display_Init(void);
 void ShowWifiInfo(void);
 void HideWifiInfo(void);
 
-void Update_Full_Display(void);
 void Update_Time(void);
 void Update_Date_And_Weekday(void);
 void Update_Bus_List(void);
-void Update_Weather_On_Nextion(void);
+void Update_Weather(void);
 void Update_Holiday_Display(void);
 void Update_Background(void);
 

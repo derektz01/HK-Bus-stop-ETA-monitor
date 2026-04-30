@@ -64,6 +64,8 @@ static void getWeatherFromCode(int code)
 // ================================================================
 // Fetch latest hourly data from Open-Meteo API (Hong Kong)
 // ================================================================
+extern volatile bool g_apiFetchInProgress;
+
 void Weather_FetchOpenMeteo(void)
 {
     if (WiFi.status() != WL_CONNECTED)
@@ -72,6 +74,7 @@ void Weather_FetchOpenMeteo(void)
         return;
     }
 
+    g_apiFetchInProgress = true;
     HTTPClient http;
     String url = "https://api.open-meteo.com/v1/forecast?"
                  "latitude=22.2783&longitude=114.1747"
@@ -86,10 +89,10 @@ void Weather_FetchOpenMeteo(void)
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("Weather post-GET ok");
+        // Stream-parse from the WiFi socket — see Fetch_Citybus_StopETA in BusData.cpp.
         String payload = http.getString();
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload);
-
         if (!error)
         {
             JsonArray times = doc["hourly"]["time"].as<JsonArray>();
@@ -112,8 +115,8 @@ void Weather_FetchOpenMeteo(void)
                     current_humidity = hums[i];
                     getWeatherFromCode(codes[i]);
 
-                    // Update Nextion display immediately
-                    Update_Weather_On_Nextion();
+                    // Push the new values to the LVGL UI immediately.
+                    Update_Weather();
 
                     printf("Open-Meteo updated: %.1f°C, %d%%, %s\r\n",
                            current_temperature, current_humidity, current_weather_desc);
@@ -128,4 +131,5 @@ void Weather_FetchOpenMeteo(void)
         printf("Weather HTTP %d\n", httpCode);
     }
     http.end();
+    g_apiFetchInProgress = false;
 }
