@@ -174,7 +174,6 @@ void loop()
   if (g_apiFetchInProgress)
   {
     delay(200);
-    printf("API fetch in progress, skipping UI update to free PSRAM bandwidth\n");
     return;
   }
 
@@ -182,7 +181,6 @@ void loop()
   { // 120 seconds
     HideWifiInfo();
     wifiInfoHidden = true;
-    printf("WiFi info hidden after 120 seconds\n");
   }
 
   // While the wifi-info banner is visible, rotate it through its frames every
@@ -200,7 +198,6 @@ void loop()
     lastTimeUpdate = millis();
     Update_Time();
     Update_Date_And_Weekday();
-    printf("Time updated: %lu seconds since boot\n", (millis() - bootTime) / 1000);
   }
 
   // Update holiday info every hour
@@ -208,7 +205,6 @@ void loop()
   { // 1 hours
     lastHolidayUpdate = millis();
     Update_Holiday_Display();
-    printf("Holiday info updated after 1 hour\n");
   }
 
   // Update background picture every 15 minutes (only sends on change)
@@ -216,7 +212,6 @@ void loop()
   {
     lastBackgroundCheck = millis();
     Update_Background();
-    printf("Background updated after 15 minutes\n");
   }
 
   // Weather + bus ETA fetches now run on the core-0 networkTask (see setup),
@@ -228,7 +223,6 @@ void loop()
     lastSlideshow = millis();
     Switch_To_Next_Page();
     Update_Bus_List();
-    printf("Switched to next page in slideshow after 5 seconds\n");
   }
 
   // Touch is handled by ui_event_ctrTouch → NextPage() → OnNextPagePressed()
