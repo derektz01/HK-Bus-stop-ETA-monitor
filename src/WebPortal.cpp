@@ -43,6 +43,46 @@ static void readStopListFromJson(JsonVariantConst node, std::vector<String> &out
   }
 }
 
+static void writeScheduleArray(JsonArray arr,
+                               const std::vector<SleepScheduleTask> &tasks)
+{
+  for (const auto &t : tasks)
+  {
+    JsonObject o = arr.add<JsonObject>();
+    o["hour"] = t.hour;
+    o["minute"] = t.minute;
+    JsonArray days = o["days"].to<JsonArray>();
+    for (int i = 0; i < 7; i++)
+      if (t.days_mask & (1 << i)) days.add(i);
+  }
+}
+
+static void readScheduleArray(JsonVariantConst node,
+                              std::vector<SleepScheduleTask> &out)
+{
+  out.clear();
+  if (!node.is<JsonArrayConst>()) return;
+  for (JsonVariantConst v : node.as<JsonArrayConst>())
+  {
+    SleepScheduleTask t{};
+    int h = v["hour"] | -1;
+    int m = v["minute"] | -1;
+    if (h < 0 || h > 23 || m < 0 || m > 59) continue;
+    t.hour = (uint8_t)h;
+    t.minute = (uint8_t)m;
+    if (v["days"].is<JsonArrayConst>())
+    {
+      for (JsonVariantConst d : v["days"].as<JsonArrayConst>())
+      {
+        int idx = d.as<int>();
+        if (idx >= 0 && idx <= 6) t.days_mask |= (uint8_t)(1 << idx);
+      }
+    }
+    if (t.days_mask == 0) continue;
+    out.push_back(t);
+  }
+}
+
 static void handleGetConfig()
 {
   const Config &cfg = ConfigMgr.getConfig();
@@ -56,6 +96,11 @@ static void handleGetConfig()
   JsonObject stops = doc["stops"].to<JsonObject>();
   writeStopArray(stops, "kmb", cfg.kmb_stop_ids);
   writeStopArray(stops, "ctb", cfg.ctb_stop_ids);
+
+  JsonObject sched = doc["sleep_schedule"].to<JsonObject>();
+  writeScheduleArray(sched["wake_tasks"].to<JsonArray>(), cfg.wake_tasks);
+  writeScheduleArray(sched["sleep_tasks"].to<JsonArray>(), cfg.sleep_tasks);
+  sched["grace_period_minutes"] = cfg.grace_period_minutes;
 
   sendJson(200, doc);
 }
@@ -95,6 +140,18 @@ static void handlePostConfig()
   if (!doc["stops"]["ctb"].isNull())
     readStopListFromJson(doc["stops"]["ctb"], cfg.ctb_stop_ids);
 
+  if (!doc["sleep_schedule"]["wake_tasks"].isNull())
+    readScheduleArray(doc["sleep_schedule"]["wake_tasks"], cfg.wake_tasks);
+  if (!doc["sleep_schedule"]["sleep_tasks"].isNull())
+    readScheduleArray(doc["sleep_schedule"]["sleep_tasks"], cfg.sleep_tasks);
+  if (doc["sleep_schedule"]["grace_period_minutes"].is<int>())
+  {
+    int g = doc["sleep_schedule"]["grace_period_minutes"].as<int>();
+    if (g < 0) g = 0;
+    if (g > 60) g = 60;
+    cfg.grace_period_minutes = (uint8_t)g;
+  }
+
   ConfigMgr.setConfig(cfg);
   bool ok = ConfigMgr.save();
 
@@ -121,6 +178,7 @@ static void handleNotFound()
 void WebPortal_Begin()
 {
   server.serveStatic("/", LittleFS, "/index.html");
+  server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico");
   server.serveStatic("/leaflet.js", LittleFS, "/leaflet.js");
   server.serveStatic("/leaflet.css", LittleFS, "/leaflet.css");
   server.serveStatic("/leaflet.markercluster.js", LittleFS, "/leaflet.markercluster.js");

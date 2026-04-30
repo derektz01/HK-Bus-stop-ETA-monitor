@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bus ETA Monitor - Setup</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="stylesheet" href="/leaflet.css">
 <link rel="stylesheet" href="/MarkerCluster.css">
 <link rel="stylesheet" href="/MarkerCluster.Default.css">
@@ -24,6 +25,31 @@
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .lang-switcher {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    gap: 0;
+  }
+  .lang-btn {
+    padding: 4px 10px;
+    border: 1px solid #ccd1d6;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+  }
+  .lang-btn:first-child { border-radius: 6px 0 0 6px; }
+  .lang-btn:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+  .lang-btn.active {
+    background: #2a5fb2;
+    color: #fff;
+    border-color: #2a5fb2;
   }
   h1 {
     font-size: 20px;
@@ -140,6 +166,105 @@
   }
   .cache-status:empty { display: none; }
   .cache-status.err { color: #c0392b; }
+
+  .schedule-section { margin-bottom: 14px; }
+  .schedule-section > label { margin-bottom: 6px; font-weight: 600; }
+  .grace-period-select {
+    font-size: 14px;
+    padding: 6px 8px;
+    border: 1px solid #ccd1d6;
+    border-radius: 4px;
+    background: #fff;
+    font-family: inherit;
+    margin-right: 4px;
+  }
+  .grace-period-suffix {
+    font-size: 13px;
+    color: #555;
+  }
+  .schedule-hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 6px;
+    line-height: 1.35;
+  }
+  .schedule-list {
+    border: 1px solid #e2e5e9;
+    border-radius: 6px;
+    background: #fff;
+    min-height: 40px;
+    margin-bottom: 8px;
+  }
+  .schedule-empty {
+    color: #888;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .schedule-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid #f0f2f5;
+    gap: 10px;
+  }
+  .schedule-row:last-child { border-bottom: none; }
+  .schedule-row .time {
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 56px;
+  }
+  .schedule-row .days {
+    flex: 1;
+    font-size: 13px;
+    color: #555;
+    word-spacing: 2px;
+  }
+  .schedule-row .rm {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .schedule-add-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    background: #fafbfc;
+    border: 1px solid #e2e5e9;
+    border-radius: 6px;
+  }
+  .schedule-time-input {
+    width: 96px;
+    font-size: 14px;
+    padding: 6px 8px;
+    border: 1px solid #ccd1d6;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .schedule-add-row .btn { margin-left: auto; }
+  .day-picker { display: flex; gap: 4px; }
+  .day-picker button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid #ccd1d6;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .day-picker button.active {
+    background: #2a5fb2;
+    color: #fff;
+    border-color: #2a5fb2;
+  }
   .selected-list {
     border: 1px solid #e2e5e9;
     border-radius: 6px;
@@ -318,92 +443,168 @@
     font-variant-numeric: tabular-nums;
   }
   .modal .hint { font-size: 13px; color: #666; }
+
+  .modal-routes {
+    text-align: left;
+    max-width: 380px;
+    width: 92%;
+    padding: 18px 20px;
+  }
+  .modal-routes-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .modal-routes-header h2 {
+    margin: 0;
+    font-size: 16px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .modal-routes-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .route-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    border-top: 1px solid #f0f2f5;
+  }
+  .route-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f2f5;
+    gap: 12px;
+  }
+  .route-row:last-child { border-bottom: none; }
+  .route-num {
+    font-weight: 700;
+    font-size: 16px;
+    color: #2a5fb2;
+    min-width: 56px;
+    font-variant-numeric: tabular-nums;
+  }
+  .route-dest {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+  }
+  .route-state {
+    padding: 24px 8px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+  }
+  .route-state.err { color: #c0392b; }
+
+  .selected-row .info {
+    background: none;
+    border: none;
+    color: #2a5fb2;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 6px;
+    line-height: 1;
+  }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Bus ETA Monitor</h1>
-  <div class="subtitle">Device configuration</div>
+  <div class="lang-switcher" id="lang-switcher">
+    <button type="button" class="lang-btn" data-lang="en">EN</button>
+    <button type="button" class="lang-btn" data-lang="zh">中</button>
+  </div>
+  <h1 data-i18n="title">Bus ETA Monitor</h1>
+  <div class="subtitle" data-i18n="subtitle">Device configuration</div>
 
   <form id="cfg-form" autocomplete="off">
     <fieldset>
-      <legend>Wi-Fi</legend>
-      <label for="wifi_ssid">SSID</label>
+      <legend data-i18n="wifi">Wi-Fi</legend>
+      <label for="wifi_ssid" data-i18n="ssid">SSID</label>
       <input type="text" id="wifi_ssid" required>
 
-      <label for="wifi_password">Password</label>
+      <label for="wifi_password" data-i18n="password">Password</label>
       <div class="pw-row">
         <input type="password" id="wifi_password">
-        <button type="button" class="toggle" id="pw-toggle">Show</button>
+        <button type="button" class="toggle" id="pw-toggle" data-i18n="show">Show</button>
       </div>
     </fieldset>
 
     <fieldset>
-      <legend>Bus Stops</legend>
+      <legend data-i18n="bus_stops">Bus Stops</legend>
 
       <div class="cache-card">
-        <div class="cache-card-title">Stop list cache</div>
+        <div class="cache-card-title" data-i18n="stop_list_cache">Stop list cache</div>
         <div class="cache-row">
           <div class="cache-row-info">
             <div class="cache-row-name">KMB</div>
-            <div class="cache-row-meta empty" id="kmb-cache-meta">Not cached yet</div>
+            <div class="cache-row-meta empty" id="kmb-cache-meta" data-i18n="not_cached">Not cached yet</div>
           </div>
-          <button type="button" class="btn btn-secondary btn-small" id="kmb-refresh">Rebuild stop list</button>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-refresh" data-i18n="rebuild_stop_list">Rebuild stop list</button>
         </div>
         <div class="cache-status" id="kmb-status"></div>
         <div class="cache-row">
           <div class="cache-row-info">
             <div class="cache-row-name">Citybus</div>
-            <div class="cache-row-meta empty" id="ctb-cache-meta">Not cached yet</div>
+            <div class="cache-row-meta empty" id="ctb-cache-meta" data-i18n="not_cached">Not cached yet</div>
           </div>
-          <button type="button" class="btn btn-secondary btn-small" id="ctb-refresh">Rebuild stop list</button>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-refresh" data-i18n="rebuild_stop_list">Rebuild stop list</button>
         </div>
         <div class="cache-status" id="ctb-status"></div>
       </div>
 
       <div class="stop-section">
-        <label>KMB Stop IDs</label>
+        <label data-i18n="kmb_stops">KMB Stop IDs</label>
         <div class="selected-list" id="kmb-selected"></div>
         <div class="stop-buttons">
-          <button type="button" class="btn btn-secondary btn-small" id="kmb-search-toggle">Search by name</button>
-          <button type="button" class="btn btn-secondary btn-small" id="kmb-map-toggle">Pick on map</button>
-          <button type="button" class="btn btn-secondary btn-small" id="kmb-manual-toggle">+ Add manually</button>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-search-toggle" data-i18n="search_by_name">Search by name</button>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-map-toggle" data-i18n="pick_on_map">Pick on map</button>
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-manual-toggle" data-i18n="add_manually">+ Add manually</button>
         </div>
         <div id="kmb-map-wrap" hidden>
           <div class="stop-status" id="kmb-map-status"></div>
-          <div class="map-banner" id="kmb-map-banner" hidden>Map tiles unavailable — check internet, or use Search by name.</div>
+          <div class="map-banner" id="kmb-map-banner" hidden data-i18n="map_tiles_offline">Map tiles unavailable — check internet, or use Search by name.</div>
           <div class="bus-map" id="kmb-map"></div>
         </div>
         <div class="manual-entry" id="kmb-manual" hidden>
-          <input type="text" id="kmb-manual-input" placeholder="Enter KMB stop ID">
-          <button type="button" class="btn btn-secondary btn-small" id="kmb-manual-add">Add</button>
+          <input type="text" id="kmb-manual-input" data-i18n-placeholder="enter_kmb_id" placeholder="Enter KMB stop ID">
+          <button type="button" class="btn btn-secondary btn-small" id="kmb-manual-add" data-i18n="add">Add</button>
         </div>
         <div class="stop-search" id="kmb-search" hidden>
-          <input type="text" id="kmb-query" placeholder="輸入站名 (e.g. 觀塘)">
+          <input type="text" id="kmb-query" data-i18n-placeholder="kmb_query_placeholder" placeholder="輸入站名 (e.g. 觀塘)">
           <div class="stop-status" id="kmb-search-status"></div>
           <div class="stop-results" id="kmb-results"></div>
         </div>
       </div>
 
       <div class="stop-section">
-        <label>Citybus Stop IDs</label>
+        <label data-i18n="ctb_stops">Citybus Stop IDs</label>
         <div class="selected-list" id="ctb-selected"></div>
         <div class="stop-buttons">
-          <button type="button" class="btn btn-secondary btn-small" id="ctb-search-toggle">Search by name</button>
-          <button type="button" class="btn btn-secondary btn-small" id="ctb-map-toggle">Pick on map</button>
-          <button type="button" class="btn btn-secondary btn-small" id="ctb-manual-toggle">+ Add manually</button>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-search-toggle" data-i18n="search_by_name">Search by name</button>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-map-toggle" data-i18n="pick_on_map">Pick on map</button>
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-manual-toggle" data-i18n="add_manually">+ Add manually</button>
         </div>
         <div id="ctb-map-wrap" hidden>
           <div class="stop-status" id="ctb-map-status"></div>
-          <div class="map-banner" id="ctb-map-banner" hidden>Map tiles unavailable — check internet, or use Search by name.</div>
+          <div class="map-banner" id="ctb-map-banner" hidden data-i18n="map_tiles_offline">Map tiles unavailable — check internet, or use Search by name.</div>
           <div class="bus-map" id="ctb-map"></div>
         </div>
         <div class="manual-entry" id="ctb-manual" hidden>
-          <input type="text" id="ctb-manual-input" placeholder="Enter CTB stop ID (6 digits)">
-          <button type="button" class="btn btn-secondary btn-small" id="ctb-manual-add">Add</button>
+          <input type="text" id="ctb-manual-input" data-i18n-placeholder="enter_ctb_id" placeholder="Enter CTB stop ID (6 digits)">
+          <button type="button" class="btn btn-secondary btn-small" id="ctb-manual-add" data-i18n="add">Add</button>
         </div>
         <div class="stop-search" id="ctb-search" hidden>
-          <input type="text" id="ctb-query" placeholder="輸入站名 (e.g. 中環)">
+          <input type="text" id="ctb-query" data-i18n-placeholder="ctb_query_placeholder" placeholder="輸入站名 (e.g. 中環)">
           <div class="stop-status" id="ctb-search-status"></div>
           <div class="stop-results" id="ctb-results"></div>
         </div>
@@ -411,9 +612,46 @@
 
     </fieldset>
 
+    <fieldset>
+      <legend data-i18n="sleep_schedule">Sleep Schedule</legend>
+
+      <div class="schedule-section">
+        <label for="grace-period" data-i18n="grace_period_label">Touch-wake grace period</label>
+        <select id="grace-period" class="grace-period-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="30">30</option>
+        </select>
+        <span class="grace-period-suffix" data-i18n="minutes">minutes</span>
+        <div class="schedule-hint" data-i18n="grace_period_hint">Run for this long after a touch wake before re-sleeping (during a scheduled sleep window).</div>
+      </div>
+
+      <div class="schedule-section">
+        <label data-i18n="wake_at">Wake at</label>
+        <div class="schedule-list" id="wake-tasks-list"></div>
+        <div class="schedule-add-row">
+          <input type="time" class="schedule-time-input" id="wake-add-time" value="07:00">
+          <div class="day-picker" id="wake-add-days"></div>
+          <button type="button" class="btn btn-secondary btn-small" id="wake-add-btn" data-i18n="add_short">+ Add</button>
+        </div>
+      </div>
+
+      <div class="schedule-section">
+        <label data-i18n="sleep_at">Sleep at</label>
+        <div class="schedule-list" id="sleep-tasks-list"></div>
+        <div class="schedule-add-row">
+          <input type="time" class="schedule-time-input" id="sleep-add-time" value="23:00">
+          <div class="day-picker" id="sleep-add-days"></div>
+          <button type="button" class="btn btn-secondary btn-small" id="sleep-add-btn" data-i18n="add_short">+ Add</button>
+        </div>
+      </div>
+    </fieldset>
+
     <div class="actions">
-      <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
-      <button type="button" class="btn btn-danger" id="reboot-btn">Reboot</button>
+      <button type="submit" class="btn btn-primary" id="save-btn" data-i18n="save">Save</button>
+      <button type="button" class="btn btn-danger" id="reboot-btn" data-i18n="reboot">Reboot</button>
     </div>
   </form>
 </div>
@@ -425,6 +663,293 @@
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
+
+  // ==========================================================================
+  // i18n — UI strings only. Bus stop names from the API stay in their original
+  // language (always Chinese, since we read `name_tc`).
+  // ==========================================================================
+  var I18N = {
+    en: {
+      page_title: 'Bus ETA Monitor — Setup',
+      title: 'Bus ETA Monitor',
+      subtitle: 'Device configuration',
+      wifi: 'Wi-Fi',
+      ssid: 'SSID',
+      password: 'Password',
+      show: 'Show',
+      hide: 'Hide',
+      bus_stops: 'Bus Stops',
+      stop_list_cache: 'Stop list cache',
+      not_cached: 'Not cached yet',
+      cache_meta: '{count} stops · built {date}',
+      rebuild_stop_list: 'Rebuild stop list',
+      kmb_stops: 'KMB Stop IDs',
+      ctb_stops: 'Citybus Stop IDs',
+      search_by_name: 'Search by name',
+      close_search: 'Close search',
+      pick_on_map: 'Pick on map',
+      close_map: 'Close map',
+      add_manually: '+ Add manually',
+      add: 'Add',
+      enter_kmb_id: 'Enter KMB stop ID',
+      enter_ctb_id: 'Enter CTB stop ID (6 digits)',
+      kmb_query_placeholder: 'Enter stop name (e.g. 觀塘)',
+      ctb_query_placeholder: 'Enter stop name (e.g. 中環)',
+      map_tiles_offline: 'Map tiles unavailable — check internet, or use Search by name.',
+      sleep_schedule: 'Sleep Schedule',
+      grace_period_label: 'Touch-wake grace period',
+      grace_period_hint: 'Run for this long after a touch wake before re-sleeping (during a scheduled sleep window).',
+      minutes: 'minutes',
+      wake_at: 'Wake at',
+      sleep_at: 'Sleep at',
+      add_short: '+ Add',
+      view_routes: 'View routes',
+      routes_at: 'Routes at {name}',
+      routes_loading: 'Loading routes…',
+      routes_empty: 'No routes found for this stop.',
+      routes_error: 'Could not fetch routes. Check internet and try again.',
+      routes_need_ctb_cache: 'Rebuild the CTB stop list first to see routes.',
+      route_destination: 'To {dest}',
+      close: 'Close',
+      save: 'Save',
+      reboot: 'Reboot',
+      rebooting: 'Rebooting device',
+      refresh_hint: 'Page will refresh automatically...',
+
+      no_stops_selected: 'No stops selected',
+      already_selected: 'Already selected',
+      already_added: 'Already added',
+      add_this_stop: 'Add this stop',
+      added_x: 'Added {name}',
+      failed_load_config: 'Failed to load config',
+      kmb_cache_save_failed: 'Could not save KMB cache',
+      ctb_cache_save_failed: 'Could not save CTB cache',
+      fetching_kmb: 'Fetching KMB stop list...',
+      fetch_failed: 'Failed to load (needs internet). Add IDs manually.',
+      ctb_phase1: 'Phase 1/3: fetching CTB route list...',
+      ctb_phase2_init: 'Phase 2/3: fetching stops for {routes} routes (0/{total})...',
+      ctb_phase2: 'Phase 2/3: fetching route stops ({done}/{total})...',
+      ctb_phase3_init: 'Phase 3/3: fetching names for {n} stops (0/{n})...',
+      ctb_phase3: 'Phase 3/3: fetching stop names ({done}/{n})...',
+      ctb_build_failed: 'Build failed ({err}). Check internet and retry.',
+      ctb_build_network_error: 'network error',
+      no_cached_ctb: 'No cached list. Click "Rebuild stop list" to fetch (one-time, a few minutes).',
+      matches: '{count} matches',
+      showing_first: ' (showing first {n})',
+      wait_before_rebuild: 'Wait {sec}s before rebuilding',
+      cooldown_suffix: ' ({sec}s)',
+      confirm_rebuild_kmb_head: 'KMB cache was rebuilt {age} ago.\n\nRebuild again?',
+      confirm_rebuild_ctb_head: 'CTB cache was rebuilt {age} ago.\n\nRebuild again? This takes a few minutes.',
+      rate_limit_kmb: '\n\nThe KMB API may rate-limit frequent rebuilds (HTTP 403).',
+      rate_limit_ctb: '\n\nThe CTB API may rate-limit frequent rebuilds.',
+      ssid_required: 'Wi-Fi SSID is required',
+      saved_ok: 'Saved. Reboot to apply changes.',
+      save_failed: 'Save failed',
+      confirm_reboot: 'Reboot the device now?',
+      added_short: 'Added',
+      stops_shown: '{count} stops shown. Tap a pin to add.',
+      loading_stops: 'Loading stop list...',
+      no_stop_list: 'No stop list available. Use "Rebuild stop list" first.',
+      no_wake_tasks: 'No wake tasks',
+      no_sleep_tasks: 'No sleep tasks',
+      every_day: 'Every day',
+      no_days: '(no days)',
+      invalid_time: 'Invalid time',
+      select_a_day: 'Select at least one day',
+      added_at: 'Added {time}',
+      duration_seconds: '{n} second{s}',
+      duration_minutes: '{n} minute{s}',
+      duration_hours: '{n} hour{s}',
+      duration_days: '{n} day{s}',
+      unresolved: '(unresolved)'
+    },
+    zh: {
+      page_title: '巴士到站時間 — 設定',
+      title: '巴士到站時間',
+      subtitle: '裝置設定',
+      wifi: 'Wi-Fi',
+      ssid: 'SSID',
+      password: '密碼',
+      show: '顯示',
+      hide: '隱藏',
+      bus_stops: '巴士站',
+      stop_list_cache: '車站列表快取',
+      not_cached: '尚未快取',
+      cache_meta: '{count} 個車站 · {date} 更新',
+      rebuild_stop_list: '重建車站列表',
+      kmb_stops: '九巴車站',
+      ctb_stops: '城巴車站',
+      search_by_name: '按站名搜尋',
+      close_search: '關閉搜尋',
+      pick_on_map: '在地圖選取',
+      close_map: '關閉地圖',
+      add_manually: '+ 手動新增',
+      add: '新增',
+      enter_kmb_id: '輸入九巴站號',
+      enter_ctb_id: '輸入城巴站號（6 位數）',
+      kmb_query_placeholder: '輸入站名（例：觀塘）',
+      ctb_query_placeholder: '輸入站名（例：中環）',
+      map_tiles_offline: '地圖圖磚無法載入 — 請檢查網絡，或使用「按站名搜尋」。',
+      sleep_schedule: '睡眠排程',
+      grace_period_label: '觸控喚醒寬限時間',
+      grace_period_hint: '在預定的睡眠時段內被觸控喚醒後，先運作這段時間才再次睡眠。',
+      minutes: '分鐘',
+      wake_at: '喚醒時間',
+      sleep_at: '睡眠時間',
+      add_short: '+ 新增',
+      view_routes: '查看路線',
+      routes_at: '{name} 經過的路線',
+      routes_loading: '路線載入中…',
+      routes_empty: '此車站沒有路線資料。',
+      routes_error: '無法載入路線資料，請檢查網絡並重試。',
+      routes_need_ctb_cache: '請先重建城巴車站列表才能查看路線。',
+      route_destination: '往 {dest}',
+      close: '關閉',
+      save: '儲存',
+      reboot: '重新啟動',
+      rebooting: '裝置重新啟動中',
+      refresh_hint: '頁面會自動重新整理…',
+
+      no_stops_selected: '尚未選擇任何車站',
+      already_selected: '已選擇',
+      already_added: '已加入',
+      add_this_stop: '加入此車站',
+      added_x: '已加入 {name}',
+      failed_load_config: '無法載入設定',
+      kmb_cache_save_failed: '無法儲存九巴快取',
+      ctb_cache_save_failed: '無法儲存城巴快取',
+      fetching_kmb: '正在抓取九巴車站列表…',
+      fetch_failed: '抓取失敗（需要網絡）。請手動輸入站號。',
+      ctb_phase1: '步驟 1/3：抓取城巴路線清單…',
+      ctb_phase2_init: '步驟 2/3：抓取 {routes} 條路線的車站（0/{total}）…',
+      ctb_phase2: '步驟 2/3：抓取路線車站（{done}/{total}）…',
+      ctb_phase3_init: '步驟 3/3：抓取 {n} 個車站名稱（0/{n}）…',
+      ctb_phase3: '步驟 3/3：抓取車站名稱（{done}/{n}）…',
+      ctb_build_failed: '建立失敗（{err}）。請檢查網絡並重試。',
+      ctb_build_network_error: '網絡錯誤',
+      no_cached_ctb: '尚無快取。請按「重建車站列表」抓取（首次需數分鐘）。',
+      matches: '{count} 個結果',
+      showing_first: '（只顯示前 {n} 個）',
+      wait_before_rebuild: '請等待 {sec} 秒後再重建',
+      cooldown_suffix: '（{sec} 秒）',
+      confirm_rebuild_kmb_head: '九巴快取於 {age}前重建過。\n\n要再次重建嗎？',
+      confirm_rebuild_ctb_head: '城巴快取於 {age}前重建過。\n\n要再次重建嗎？需數分鐘。',
+      rate_limit_kmb: '\n\n九巴 API 可能會限制頻繁重建（HTTP 403）。',
+      rate_limit_ctb: '\n\n城巴 API 可能會限制頻繁重建。',
+      ssid_required: '必須輸入 Wi-Fi SSID',
+      saved_ok: '已儲存。重新啟動才會套用變更。',
+      save_failed: '儲存失敗',
+      confirm_reboot: '現在重新啟動裝置？',
+      added_short: '已加入',
+      stops_shown: '已顯示 {count} 個車站。點擊圖釘即可加入。',
+      loading_stops: '車站列表載入中…',
+      no_stop_list: '無車站列表可用。請先按「重建車站列表」。',
+      no_wake_tasks: '尚無喚醒任務',
+      no_sleep_tasks: '尚無睡眠任務',
+      every_day: '每天',
+      no_days: '（未選日）',
+      invalid_time: '時間格式無效',
+      select_a_day: '請選擇至少一天',
+      added_at: '已加入 {time}',
+      duration_seconds: '{n} 秒',
+      duration_minutes: '{n} 分鐘',
+      duration_hours: '{n} 小時',
+      duration_days: '{n} 日',
+      unresolved: '（未解析）'
+    }
+  };
+
+  var currentLang = localStorage.getItem('lang')
+    || ((navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en');
+
+  function t(key, params) {
+    var dict = I18N[currentLang] || I18N.en;
+    var s = dict[key];
+    if (s == null) s = (I18N.en[key] != null ? I18N.en[key] : key);
+    if (params) {
+      for (var k in params) {
+        if (Object.prototype.hasOwnProperty.call(params, k)) {
+          s = s.split('{' + k + '}').join(String(params[k]));
+        }
+      }
+    }
+    // English plural marker {s} → 's' when count != 1, '' otherwise.
+    if (s.indexOf('{s}') !== -1) {
+      var n = params && params.n;
+      s = s.split('{s}').join((n === 1 || n === '1') ? '' : 's');
+    }
+    return s;
+  }
+
+  function applyI18n() {
+    document.documentElement.lang = (currentLang === 'zh' ? 'zh-Hant' : 'en');
+    document.title = t('page_title');
+    var els = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < els.length; i++) {
+      var k = els[i].getAttribute('data-i18n');
+      if (k) els[i].textContent = t(k);
+    }
+    var phs = document.querySelectorAll('[data-i18n-placeholder]');
+    for (var j = 0; j < phs.length; j++) {
+      var pk = phs[j].getAttribute('data-i18n-placeholder');
+      if (pk) phs[j].setAttribute('placeholder', t(pk));
+    }
+    var btns = document.querySelectorAll('#lang-switcher .lang-btn');
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].classList.toggle('active', btns[b].getAttribute('data-lang') === currentLang);
+    }
+  }
+
+  function setLang(lang) {
+    if (lang !== 'en' && lang !== 'zh') return;
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    applyI18n();
+    // Re-render JS-built views that build labels from t().
+    if (typeof renderSelected === 'function') {
+      renderSelected('kmb');
+      renderSelected('ctb');
+    }
+    if (typeof renderScheduleList === 'function') {
+      renderScheduleList('wake');
+      renderScheduleList('sleep');
+    }
+    if (typeof updateCacheMeta === 'function') {
+      updateCacheMeta('kmb');
+      updateCacheMeta('ctb');
+    }
+    if (typeof refreshToggleLabels === 'function') {
+      refreshToggleLabels();
+    }
+  }
+
+  // Toggle button text needs to follow the current panel state, so we keep a
+  // helper that re-derives the label from the current `hidden` flag.
+  function refreshToggleLabels() {
+    var pairs = [
+      ['kmb-search-toggle', 'kmb-search', 'search_by_name', 'close_search'],
+      ['ctb-search-toggle', 'ctb-search', 'search_by_name', 'close_search'],
+      ['kmb-map-toggle',    'kmb-map-wrap', 'pick_on_map', 'close_map'],
+      ['ctb-map-toggle',    'ctb-map-wrap', 'pick_on_map', 'close_map']
+    ];
+    for (var i = 0; i < pairs.length; i++) {
+      var btn = $(pairs[i][0]); var box = $(pairs[i][1]);
+      if (btn && box) btn.textContent = t(box.hidden ? pairs[i][2] : pairs[i][3]);
+    }
+    var pw = $('pw-toggle');
+    var pwField = $('wifi_password');
+    if (pw && pwField) pw.textContent = t(pwField.type === 'password' ? 'show' : 'hide');
+  }
+
+  // Switcher click handlers
+  var switcher = $('lang-switcher');
+  if (switcher) {
+    switcher.addEventListener('click', function (e) {
+      var b = e.target;
+      if (b && b.classList.contains('lang-btn')) setLang(b.getAttribute('data-lang'));
+    });
+  }
+  applyI18n();
 
   function toast(msg, kind) {
     var t = $('toast');
@@ -457,29 +982,37 @@
 
   function formatDuration(ms) {
     var s = Math.round(ms / 1000);
-    if (s < 60) return s + ' second' + (s === 1 ? '' : 's');
+    if (s < 60) return t('duration_seconds', {n: s});
     var m = Math.round(s / 60);
-    if (m < 60) return m + ' minute' + (m === 1 ? '' : 's');
+    if (m < 60) return t('duration_minutes', {n: m});
     var h = Math.round(m / 60);
-    if (h < 24) return h + ' hour' + (h === 1 ? '' : 's');
+    if (h < 24) return t('duration_hours', {n: h});
     var d = Math.round(h / 24);
-    return d + ' day' + (d === 1 ? '' : 's');
+    return t('duration_days', {n: d});
   }
 
-  function startCooldown(btnId, ms, baseLabel) {
+  function startCooldown(btnId, ms, labelKey) {
     var btn = $(btnId);
     var until = Date.now() + ms;
     btn.dataset.cooldownUntil = String(until);
+    // Park the data-i18n attribute so applyI18n() doesn't clobber the
+    // cooldown text on language switch; the tick (every 250 ms) re-renders
+    // from t(labelKey) and naturally picks up the new language.
+    var origI18n = btn.getAttribute('data-i18n') || '';
+    btn.dataset.origI18n = origI18n;
+    if (origI18n) btn.removeAttribute('data-i18n');
     function tick() {
       var remaining = until - Date.now();
       if (remaining <= 0) {
         btn.disabled = false;
-        btn.textContent = baseLabel;
+        btn.textContent = t(labelKey);
+        if (btn.dataset.origI18n) btn.setAttribute('data-i18n', btn.dataset.origI18n);
         delete btn.dataset.cooldownUntil;
+        delete btn.dataset.origI18n;
         return;
       }
       btn.disabled = true;
-      btn.textContent = baseLabel + ' (' + Math.ceil(remaining / 1000) + 's)';
+      btn.textContent = t(labelKey) + t('cooldown_suffix', {sec: Math.ceil(remaining / 1000)});
       setTimeout(tick, 250);
     }
     tick();
@@ -511,7 +1044,7 @@
     if (ids.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'selected-empty';
-      empty.textContent = 'No stops selected';
+      empty.textContent = t('no_stops_selected');
       el.appendChild(empty);
       return;
     }
@@ -522,8 +1055,16 @@
       var name = stopNameFor(kind, id);
       var lbl = document.createElement('div');
       lbl.className = 'label';
-      lbl.innerHTML = '<span>' + escapeHtml(name || '(unresolved)') + '</span>' +
+      lbl.innerHTML = '<span>' + escapeHtml(name || t('unresolved')) + '</span>' +
                       '<span class="sid">' + escapeHtml(id) + '</span>';
+      var info = document.createElement('button');
+      info.type = 'button';
+      info.className = 'info';
+      info.title = t('view_routes');
+      info.textContent = 'ⓘ';
+      (function (k, infoId, infoName) {
+        info.onclick = function () { showRoutesModal(k, infoId, infoName); };
+      })(kind, id, name || id);
       var rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'rm';
@@ -536,6 +1077,7 @@
         };
       })(kind, id);
       row.appendChild(lbl);
+      row.appendChild(info);
       row.appendChild(rm);
       el.appendChild(row);
     }
@@ -546,7 +1088,7 @@
     id = String(id || '').trim();
     if (!id) return false;
     if (selected[kind].indexOf(id) !== -1) {
-      toast('Already selected', 'err');
+      toast(t('already_selected'), 'err');
       return false;
     }
     selected[kind].push(id);
@@ -573,8 +1115,17 @@
         selected.ctb = normalizeIds(cfg.stops && cfg.stops.ctb);
         renderSelected('kmb');
         renderSelected('ctb');
+        var sched = cfg.sleep_schedule || {};
+        schedule.wake = normalizeScheduleTasks(sched.wake_tasks);
+        schedule.sleep = normalizeScheduleTasks(sched.sleep_tasks);
+        renderScheduleList('wake');
+        renderScheduleList('sleep');
+        var grace = parseInt(sched.grace_period_minutes, 10);
+        var allowed = [1, 2, 5, 10, 30];
+        if (allowed.indexOf(grace) === -1) grace = 5;
+        $('grace-period').value = String(grace);
       })
-      .catch(function () { toast('Failed to load config', 'err'); });
+      .catch(function () { toast(t('failed_load_config'), 'err'); });
   }
 
   // ==========================================================================
@@ -595,12 +1146,15 @@
     var stops = (prefix === 'kmb') ? kmbStops : ctbStops;
     var tsKey = (prefix === 'kmb') ? KMB_CACHE_TS_KEY : CTB_CACHE_TS_KEY;
     if (!stops || stops.length === 0) {
-      el.textContent = 'Not cached yet';
+      el.textContent = t('not_cached');
       el.classList.add('empty');
       return;
     }
     var date = formatCacheTimestamp(localStorage.getItem(tsKey));
-    el.textContent = stops.length.toLocaleString() + ' stops · built ' + (date || 'unknown');
+    el.textContent = t('cache_meta', {
+      count: stops.length.toLocaleString(),
+      date: date || '—'
+    });
     el.classList.remove('empty');
   }
 
@@ -617,7 +1171,7 @@
     try {
       localStorage.setItem(KMB_CACHE_KEY, JSON.stringify(list));
       localStorage.setItem(KMB_CACHE_TS_KEY, new Date().toISOString());
-    } catch (e) { toast('Could not save KMB cache', 'err'); }
+    } catch (e) { toast(t('kmb_cache_save_failed'), 'err'); }
   }
 
   function formatCacheTimestamp(ts) {
@@ -633,7 +1187,7 @@
     if (kmbBuilding) return Promise.resolve();
     kmbBuilding = true;
     $('kmb-refresh').disabled = true;
-    setKmbStatus('Fetching KMB stop list...');
+    setKmbStatus(t('fetching_kmb'));
     return fetch(KMB_URL)
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -661,12 +1215,12 @@
         renderKmbResults($('kmb-query').value);
       })
       .catch(function () {
-        setKmbStatus('Failed to load (needs internet). Add IDs manually.');
+        setKmbStatus(t('fetch_failed'));
         kmbStops = null;
       })
       .then(function () {
         kmbBuilding = false;
-        startCooldown('kmb-refresh', REBUILD_COOLDOWN_MS, 'Rebuild stop list');
+        startCooldown('kmb-refresh', REBUILD_COOLDOWN_MS, 'rebuild_stop_list');
       });
   }
 
@@ -697,7 +1251,8 @@
       if (kmbStops[i].name.indexOf(q) !== -1) matches.push(kmbStops[i]);
     }
     var shown = Math.min(matches.length, KMB_RESULT_LIMIT);
-    setKmbSearchStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
+    setKmbSearchStatus(t('matches', {count: matches.length}) +
+                       (matches.length > shown ? t('showing_first', {n: shown}) : ''));
     for (var j = 0; j < shown; j++) {
       var s = matches[j];
       var row = document.createElement('div');
@@ -706,7 +1261,7 @@
                       '<span class="sid">' + escapeHtml(s.id) + '</span>';
       (function (id, name) {
         row.onclick = function () {
-          if (addSelected('kmb', id)) toast('Added ' + name, 'ok');
+          if (addSelected('kmb', id)) toast(t('added_x', {name: name}), 'ok');
         };
       })(s.id, s.name);
       el.appendChild(row);
@@ -716,7 +1271,7 @@
   $('kmb-search-toggle').onclick = function () {
     var box = $('kmb-search');
     box.hidden = !box.hidden;
-    this.textContent = box.hidden ? 'Search by name' : 'Close search';
+    this.textContent = t(box.hidden ? 'search_by_name' : 'close_search');
     if (!box.hidden) {
       ensureKmbStops().then(function () {
         renderKmbResults($('kmb-query').value);
@@ -729,15 +1284,13 @@
     if (kmbBuilding) return;
     var remaining = cooldownRemainingMs('kmb-refresh');
     if (remaining > 0) {
-      toast('Wait ' + Math.ceil(remaining / 1000) + 's before rebuilding', 'err');
+      toast(t('wait_before_rebuild', {sec: Math.ceil(remaining / 1000)}), 'err');
       return;
     }
     if (kmbStops) {
       var age = cacheAgeMs(KMB_CACHE_TS_KEY);
-      var msg = 'KMB cache was rebuilt ' + formatDuration(age) + ' ago.\n\nRebuild again?';
-      if (age < REBUILD_GATE_MS) {
-        msg += '\n\nThe KMB API may rate-limit frequent rebuilds (HTTP 403).';
-      }
+      var msg = t('confirm_rebuild_kmb_head', {age: formatDuration(age)});
+      if (age < REBUILD_GATE_MS) msg += t('rate_limit_kmb');
       if (!confirm(msg)) return;
     }
     buildKmbStops();
@@ -755,7 +1308,7 @@
     var v = $('kmb-manual-input').value;
     if (addSelected('kmb', v)) {
       $('kmb-manual-input').value = '';
-      toast('Added', 'ok');
+      toast(t('added_short'), 'ok');
     }
   };
 
@@ -767,8 +1320,8 @@
   var CTB_RESULT_LIMIT = 100;
   var CTB_API = 'https://rt.data.gov.hk/v2/transport/citybus';
   var CTB_CONCURRENCY = 10;
-  var CTB_CACHE_KEY = 'ctbStops.v2';
-  var CTB_CACHE_TS_KEY = 'ctbStops.v2.ts';
+  var CTB_CACHE_KEY = 'ctbStops.v3';
+  var CTB_CACHE_TS_KEY = 'ctbStops.v3.ts';
 
   function setCtbStatus(msg) { $('ctb-status').textContent = msg; }
   function setCtbSearchStatus(msg) { $('ctb-search-status').textContent = msg; }
@@ -797,7 +1350,7 @@
     try {
       localStorage.setItem(CTB_CACHE_KEY, JSON.stringify(stops));
       localStorage.setItem(CTB_CACHE_TS_KEY, new Date().toISOString());
-    } catch (e) { toast('Could not save CTB cache', 'err'); }
+    } catch (e) { toast(t('ctb_cache_save_failed'), 'err'); }
   }
 
   function buildCtbStops() {
@@ -805,37 +1358,54 @@
     ctbBuilding = true;
     $('ctb-refresh').disabled = true;
 
-    setCtbStatus('Phase 1/3: fetching CTB route list...');
+    setCtbStatus(t('ctb_phase1'));
+    // routeMeta: { route → { orig_tc, dest_tc } } captured in phase 1
+    // stopRoutes: { stopId → [ { route, dir }, ... ] } accumulated in phase 2
+    var routeMeta = {};
+    var stopRoutes = {};
     return fetch(CTB_API + '/route/CTB')
       .then(function (r) {
         if (!r.ok) throw new Error('route list HTTP ' + r.status);
         return r.json();
       })
       .then(function (data) {
-        var routes = ((data && data.data) || [])
-          .map(function (x) { return x && x.route; })
-          .filter(function (x) { return !!x; });
+        var rows = (data && data.data) || [];
+        var routes = [];
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          if (!r || !r.route) continue;
+          routes.push(r.route);
+          routeMeta[r.route] = {
+            orig_tc: r.orig_tc || '',
+            dest_tc: r.dest_tc || ''
+          };
+        }
         if (routes.length === 0) throw new Error('no routes');
 
         var reqs = [];
-        for (var i = 0; i < routes.length; i++) {
-          reqs.push({ route: routes[i], dir: 'inbound' });
-          reqs.push({ route: routes[i], dir: 'outbound' });
+        for (var k = 0; k < routes.length; k++) {
+          reqs.push({ route: routes[k], dir: 'inbound' });
+          reqs.push({ route: routes[k], dir: 'outbound' });
         }
 
         var stopIdSet = {};
         var done = 0;
-        setCtbStatus('Phase 2/3: fetching stops for ' + routes.length + ' routes (0/' + reqs.length + ')...');
+        setCtbStatus(t('ctb_phase2_init', {routes: routes.length, total: reqs.length}));
 
         return runInBatches(reqs, CTB_CONCURRENCY, function (req) {
           var url = CTB_API + '/route-stop/CTB/' + encodeURIComponent(req.route) + '/' + req.dir;
+          var dirCode = (req.dir === 'inbound') ? 'I' : 'O';
           return fetch(url)
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
               if (d && d.data) {
-                for (var k = 0; k < d.data.length; k++) {
-                  var s = d.data[k];
-                  if (s && s.stop) stopIdSet[s.stop] = true;
+                for (var n = 0; n < d.data.length; n++) {
+                  var s = d.data[n];
+                  if (s && s.stop) {
+                    stopIdSet[s.stop] = true;
+                    if (!stopRoutes[s.stop]) stopRoutes[s.stop] = [];
+                    stopRoutes[s.stop].push({ route: req.route, dir: dirCode });
+                  }
                 }
               }
             })
@@ -843,7 +1413,7 @@
             .then(function () {
               done++;
               if (done % 20 === 0 || done === reqs.length) {
-                setCtbStatus('Phase 2/3: fetching route stops (' + done + '/' + reqs.length + ')...');
+                setCtbStatus(t('ctb_phase2', {done: done, total: reqs.length}));
               }
             });
         }).then(function () {
@@ -854,7 +1424,7 @@
         if (!stopIds || stopIds.length === 0) throw new Error('no stops');
         var results = [];
         var done = 0;
-        setCtbStatus('Phase 3/3: fetching names for ' + stopIds.length + ' stops (0/' + stopIds.length + ')...');
+        setCtbStatus(t('ctb_phase3_init', {n: stopIds.length}));
 
         return runInBatches(stopIds, CTB_CONCURRENCY, function (id) {
           var url = CTB_API + '/stop/' + encodeURIComponent(id);
@@ -862,11 +1432,32 @@
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (d) {
               if (d && d.data && d.data.name_tc) {
+                // Resolve route → destination for this stop. Outbound (O) is
+                // origin → destination, so heading = dest_tc. Inbound (I) is
+                // destination → origin, so heading = orig_tc.
+                var rs = stopRoutes[id] || [];
+                var routes = [];
+                var seen = {};
+                for (var n = 0; n < rs.length; n++) {
+                  var entry = rs[n];
+                  var meta = routeMeta[entry.route];
+                  if (!meta) continue;
+                  var dest = (entry.dir === 'I') ? meta.orig_tc : meta.dest_tc;
+                  var key = entry.route + '|' + entry.dir;
+                  if (seen[key]) continue;
+                  seen[key] = true;
+                  routes.push({ route: entry.route, dir: entry.dir, dest: dest });
+                }
+                routes.sort(function (a, b) {
+                  return a.route.localeCompare(b.route, undefined, {numeric: true})
+                      || a.dir.localeCompare(b.dir);
+                });
                 results.push({
                   id: id,
                   name: d.data.name_tc,
                   lat: parseFloat(d.data.lat),
-                  lng: parseFloat(d.data.long)
+                  lng: parseFloat(d.data.long),
+                  routes: routes
                 });
               }
             })
@@ -874,7 +1465,7 @@
             .then(function () {
               done++;
               if (done % 50 === 0 || done === stopIds.length) {
-                setCtbStatus('Phase 3/3: fetching stop names (' + done + '/' + stopIds.length + ')...');
+                setCtbStatus(t('ctb_phase3', {done: done, n: stopIds.length}));
               }
             });
         }).then(function () {
@@ -888,11 +1479,13 @@
         });
       })
       .catch(function (err) {
-        setCtbStatus('Build failed (' + (err && err.message ? err.message : 'network error') + '). Check internet and retry.');
+        setCtbStatus(t('ctb_build_failed', {
+          err: (err && err.message) ? err.message : t('ctb_build_network_error')
+        }));
       })
       .then(function () {
         ctbBuilding = false;
-        startCooldown('ctb-refresh', REBUILD_COOLDOWN_MS, 'Rebuild stop list');
+        startCooldown('ctb-refresh', REBUILD_COOLDOWN_MS, 'rebuild_stop_list');
       });
   }
 
@@ -906,7 +1499,7 @@
       renderSelected('ctb');
       return Promise.resolve();
     }
-    setCtbStatus('No cached list. Click "Rebuild stop list" to fetch (one-time, a few minutes).');
+    setCtbStatus(t('no_cached_ctb'));
     return Promise.resolve();
   }
 
@@ -924,7 +1517,8 @@
       if (ctbStops[i].name.indexOf(q) !== -1) matches.push(ctbStops[i]);
     }
     var shown = Math.min(matches.length, CTB_RESULT_LIMIT);
-    setCtbSearchStatus(matches.length + ' matches' + (matches.length > shown ? ' (showing first ' + shown + ')' : ''));
+    setCtbSearchStatus(t('matches', {count: matches.length}) +
+                       (matches.length > shown ? t('showing_first', {n: shown}) : ''));
     for (var j = 0; j < shown; j++) {
       var s = matches[j];
       var row = document.createElement('div');
@@ -933,7 +1527,7 @@
                       '<span class="sid">' + escapeHtml(s.id) + '</span>';
       (function (id, name) {
         row.onclick = function () {
-          if (addSelected('ctb', id)) toast('Added ' + name, 'ok');
+          if (addSelected('ctb', id)) toast(t('added_x', {name: name}), 'ok');
         };
       })(s.id, s.name);
       el.appendChild(row);
@@ -943,7 +1537,7 @@
   $('ctb-search-toggle').onclick = function () {
     var box = $('ctb-search');
     box.hidden = !box.hidden;
-    this.textContent = box.hidden ? 'Search by name' : 'Close search';
+    this.textContent = t(box.hidden ? 'search_by_name' : 'close_search');
     if (!box.hidden) {
       ensureCtbStops().then(function () {
         renderCtbResults($('ctb-query').value);
@@ -956,16 +1550,13 @@
     if (ctbBuilding) return;
     var remaining = cooldownRemainingMs('ctb-refresh');
     if (remaining > 0) {
-      toast('Wait ' + Math.ceil(remaining / 1000) + 's before rebuilding', 'err');
+      toast(t('wait_before_rebuild', {sec: Math.ceil(remaining / 1000)}), 'err');
       return;
     }
     if (ctbStops) {
       var age = cacheAgeMs(CTB_CACHE_TS_KEY);
-      var msg = 'CTB cache was rebuilt ' + formatDuration(age) + ' ago.\n\n' +
-                'Rebuild again? This takes a few minutes.';
-      if (age < REBUILD_GATE_MS) {
-        msg += '\n\nThe CTB API may rate-limit frequent rebuilds.';
-      }
+      var msg = t('confirm_rebuild_ctb_head', {age: formatDuration(age)});
+      if (age < REBUILD_GATE_MS) msg += t('rate_limit_ctb');
       if (!confirm(msg)) return;
     }
     buildCtbStops();
@@ -983,7 +1574,7 @@
     var v = $('ctb-manual-input').value;
     if (addSelected('ctb', v)) {
       $('ctb-manual-input').value = '';
-      toast('Added', 'ok');
+      toast(t('added_short'), 'ok');
     }
   };
 
@@ -1008,19 +1599,26 @@
     btn.type = 'button';
     btn.className = 'btn btn-secondary btn-small';
     var isSel = (selected[prefix].indexOf(stop.id) !== -1);
-    btn.textContent = isSel ? 'Already added' : 'Add this stop';
+    btn.textContent = t(isSel ? 'already_added' : 'add_this_stop');
     btn.disabled = isSel;
     btn.onclick = function () {
       if (addSelected(prefix, stop.id)) {
-        toast('Added ' + stop.name, 'ok');
+        toast(t('added_x', {name: stop.name}), 'ok');
         marker.setStyle({ color: COLOR_SELECTED, fillColor: COLOR_SELECTED });
-        btn.textContent = 'Already added';
+        btn.textContent = t('already_added');
         btn.disabled = true;
       }
     };
+    var routesBtn = document.createElement('button');
+    routesBtn.type = 'button';
+    routesBtn.className = 'btn btn-secondary btn-small';
+    routesBtn.style.marginLeft = '6px';
+    routesBtn.textContent = t('view_routes');
+    routesBtn.onclick = function () { showRoutesModal(prefix, stop.id, stop.name); };
     div.appendChild(nameDiv);
     div.appendChild(idDiv);
     div.appendChild(btn);
+    div.appendChild(routesBtn);
     return div;
   }
 
@@ -1074,7 +1672,7 @@
     maps[prefix] = map;
 
     var status = $(prefix + '-map-status');
-    status.textContent = added + ' stops shown. Tap a pin to add.';
+    status.textContent = t('stops_shown', {count: added});
     return true;
   }
 
@@ -1093,17 +1691,17 @@
     var btn = $(prefix + '-map-toggle');
     var status = $(prefix + '-map-status');
     box.hidden = !box.hidden;
-    btn.textContent = box.hidden ? 'Pick on map' : 'Close map';
+    btn.textContent = t(box.hidden ? 'pick_on_map' : 'close_map');
     if (box.hidden) return;
 
     var stops = (prefix === 'kmb') ? kmbStops : ctbStops;
     if (!stops || stops.length === 0) {
-      status.textContent = 'Loading stop list...';
+      status.textContent = t('loading_stops');
     }
     ensureFn().then(function () {
       var ok = initMap(prefix);
       if (!ok) {
-        status.textContent = 'No stop list available. Use "Rebuild stop list" first.';
+        status.textContent = t('no_stop_list');
         return;
       }
       setTimeout(function () { maps[prefix].invalidateSize(); }, 50);
@@ -1115,18 +1713,270 @@
   $('ctb-map-toggle').onclick = function () { openMapPanel('ctb', ensureCtbStops); };
 
   // ==========================================================================
+  // Sleep schedule
+  // ==========================================================================
+  var DAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'];
+  var schedule = { wake: [], sleep: [] };
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  function buildDayPicker(containerId) {
+    var el = $(containerId);
+    el.innerHTML = '';
+    for (var i = 0; i < 7; i++) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.day = i;
+      btn.textContent = DAY_LABELS[i];
+      btn.onclick = function () { this.classList.toggle('active'); };
+      el.appendChild(btn);
+    }
+  }
+
+  function getSelectedDays(containerId) {
+    var days = [];
+    var btns = $(containerId).querySelectorAll('button.active');
+    for (var i = 0; i < btns.length; i++) days.push(parseInt(btns[i].dataset.day, 10));
+    days.sort(function (a, b) { return a - b; });
+    return days;
+  }
+
+  function clearDayPicker(containerId) {
+    var btns = $(containerId).querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  }
+
+  function formatDays(daysArr) {
+    if (!daysArr || daysArr.length === 0) return t('no_days');
+    if (daysArr.length === 7) return t('every_day');
+    var s = '';
+    for (var i = 0; i < daysArr.length; i++) {
+      s += DAY_LABELS[daysArr[i]];
+      if (i < daysArr.length - 1) s += ' ';
+    }
+    return s;
+  }
+
+  function renderScheduleList(kind) {
+    var el = $(kind + '-tasks-list');
+    var tasks = schedule[kind];
+    el.innerHTML = '';
+    if (tasks.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'schedule-empty';
+      empty.textContent = t(kind === 'wake' ? 'no_wake_tasks' : 'no_sleep_tasks');
+      el.appendChild(empty);
+      return;
+    }
+    for (var i = 0; i < tasks.length; i++) {
+      (function (k, idx) {
+        var t = schedule[k][idx];
+        var row = document.createElement('div');
+        row.className = 'schedule-row';
+        var time = document.createElement('span');
+        time.className = 'time';
+        time.textContent = pad2(t.hour) + ':' + pad2(t.minute);
+        var days = document.createElement('span');
+        days.className = 'days';
+        days.textContent = formatDays(t.days);
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'rm';
+        rm.title = 'Remove';
+        rm.textContent = '×';
+        rm.onclick = function () {
+          schedule[k].splice(idx, 1);
+          renderScheduleList(k);
+        };
+        row.appendChild(time);
+        row.appendChild(days);
+        row.appendChild(rm);
+        el.appendChild(row);
+      })(kind, i);
+    }
+  }
+
+  function addScheduleTask(kind) {
+    var v = ($(kind + '-add-time').value || '').trim();
+    var parts = v.split(':');
+    if (parts.length !== 2) { toast(t('invalid_time'), 'err'); return; }
+    var hour = parseInt(parts[0], 10);
+    var minute = parseInt(parts[1], 10);
+    if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      toast(t('invalid_time'), 'err');
+      return;
+    }
+    var days = getSelectedDays(kind + '-add-days');
+    if (days.length === 0) { toast(t('select_a_day'), 'err'); return; }
+    schedule[kind].push({ hour: hour, minute: minute, days: days });
+    renderScheduleList(kind);
+    clearDayPicker(kind + '-add-days');
+    toast(t('added_at', {time: pad2(hour) + ':' + pad2(minute)}), 'ok');
+  }
+
+  function normalizeScheduleTasks(arr) {
+    if (!Array.isArray(arr)) return [];
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var t = arr[i] || {};
+      var hour = parseInt(t.hour, 10);
+      var minute = parseInt(t.minute, 10);
+      var days = Array.isArray(t.days) ? t.days.map(function (d) { return parseInt(d, 10); })
+                                         .filter(function (d) { return d >= 0 && d <= 6; }) : [];
+      if (isNaN(hour) || isNaN(minute) || days.length === 0) continue;
+      days.sort(function (a, b) { return a - b; });
+      out.push({ hour: hour, minute: minute, days: days });
+    }
+    return out;
+  }
+
+  // ==========================================================================
+  // Routes-at-stop modal (per-stop "what routes pass here" view)
+  // KMB: live fetch from /stop-eta/{id} (single call). CTB: read from cache.
+  // ==========================================================================
+  var KMB_STOP_ETA_URL = 'https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/';
+
+  function fetchKmbStopRoutes(stopId) {
+    return fetch(KMB_STOP_ETA_URL + encodeURIComponent(stopId))
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var rows = (data && data.data) || [];
+        var seen = {};
+        var out = [];
+        for (var i = 0; i < rows.length; i++) {
+          var e = rows[i];
+          if (!e || !e.route) continue;
+          var key = e.route + '|' + (e.dir || '') + '|' + (e.service_type || '');
+          if (seen[key]) continue;
+          seen[key] = true;
+          out.push({
+            route: e.route,
+            dir: e.dir || '',
+            dest: e.dest_tc || ''
+          });
+        }
+        out.sort(function (a, b) {
+          return a.route.localeCompare(b.route, undefined, {numeric: true})
+              || a.dir.localeCompare(b.dir);
+        });
+        return out;
+      });
+  }
+
+  // Returns: undefined = cache not built; array = routes (possibly empty);
+  // null = cache built but stop not in it.
+  function ctbRoutesFromCache(stopId) {
+    if (!ctbStops) return undefined;
+    for (var i = 0; i < ctbStops.length; i++) {
+      if (ctbStops[i].id === stopId) {
+        return Array.isArray(ctbStops[i].routes) ? ctbStops[i].routes : [];
+      }
+    }
+    return null;
+  }
+
+  function renderRouteList(listEl, routes) {
+    listEl.innerHTML = '';
+    if (!routes || routes.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'route-state';
+      empty.textContent = t('routes_empty');
+      listEl.appendChild(empty);
+      return;
+    }
+    for (var i = 0; i < routes.length; i++) {
+      var r = routes[i];
+      var row = document.createElement('div');
+      row.className = 'route-row';
+      var num = document.createElement('span');
+      num.className = 'route-num';
+      num.textContent = r.route;
+      var dest = document.createElement('span');
+      dest.className = 'route-dest';
+      dest.textContent = t('route_destination', {dest: r.dest || '—'});
+      row.appendChild(num);
+      row.appendChild(dest);
+      listEl.appendChild(row);
+    }
+  }
+
+  function showRoutesModal(prefix, stopId, stopName) {
+    var backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML =
+      '<div class="modal modal-routes" role="dialog">' +
+      '  <div class="modal-routes-header">' +
+      '    <h2></h2>' +
+      '    <button type="button" class="modal-routes-close" aria-label="Close">×</button>' +
+      '  </div>' +
+      '  <div class="route-list"></div>' +
+      '</div>';
+    document.body.appendChild(backdrop);
+
+    var titleEl = backdrop.querySelector('.modal-routes-header h2');
+    var listEl  = backdrop.querySelector('.route-list');
+    titleEl.textContent = t('routes_at', {name: stopName || stopId});
+
+    function close() {
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    }
+    backdrop.querySelector('.modal-routes-close').onclick = close;
+    backdrop.addEventListener('click', function (e) {
+      if (e.target === backdrop) close();
+    });
+
+    listEl.innerHTML = '<div class="route-state">' + escapeHtml(t('routes_loading')) + '</div>';
+
+    var promise;
+    if (prefix === 'kmb') {
+      promise = fetchKmbStopRoutes(stopId);
+    } else {
+      var cached = ctbRoutesFromCache(stopId);
+      if (cached === undefined) {
+        listEl.innerHTML = '';
+        var msg = document.createElement('div');
+        msg.className = 'route-state err';
+        msg.textContent = t('routes_need_ctb_cache');
+        listEl.appendChild(msg);
+        return;
+      }
+      promise = Promise.resolve(cached || []);
+    }
+
+    promise.then(function (routes) {
+      renderRouteList(listEl, routes);
+    }).catch(function () {
+      listEl.innerHTML = '';
+      var err = document.createElement('div');
+      err.className = 'route-state err';
+      err.textContent = t('routes_error');
+      listEl.appendChild(err);
+    });
+  }
+
+  buildDayPicker('wake-add-days');
+  buildDayPicker('sleep-add-days');
+  renderScheduleList('wake');
+  renderScheduleList('sleep');
+  $('wake-add-btn').onclick = function () { addScheduleTask('wake'); };
+  $('sleep-add-btn').onclick = function () { addScheduleTask('sleep'); };
+
+  // ==========================================================================
   // Wi-Fi password toggle, Save, Reboot
   // ==========================================================================
   $('pw-toggle').onclick = function () {
     var f = $('wifi_password');
-    if (f.type === 'password') { f.type = 'text'; this.textContent = 'Hide'; }
-    else { f.type = 'password'; this.textContent = 'Show'; }
+    if (f.type === 'password') { f.type = 'text'; this.textContent = t('hide'); }
+    else { f.type = 'password'; this.textContent = t('show'); }
   };
 
   $('cfg-form').onsubmit = function (e) {
     e.preventDefault();
     var ssid = $('wifi_ssid').value.trim();
-    if (!ssid) { toast('Wi-Fi SSID is required', 'err'); return; }
+    if (!ssid) { toast(t('ssid_required'), 'err'); return; }
 
     var body = {
       wifi: {
@@ -1136,6 +1986,11 @@
       stops: {
         kmb: selected.kmb.slice(),
         ctb: selected.ctb.slice()
+      },
+      sleep_schedule: {
+        wake_tasks: schedule.wake.slice(),
+        sleep_tasks: schedule.sleep.slice(),
+        grace_period_minutes: parseInt($('grace-period').value, 10) || 5
       }
     };
 
@@ -1150,8 +2005,8 @@
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
-      .then(function () { toast('Saved. Reboot to apply Wi-Fi changes.', 'ok'); })
-      .catch(function () { toast('Save failed', 'err'); })
+      .then(function () { toast(t('saved_ok'), 'ok'); })
+      .catch(function () { toast(t('save_failed'), 'err'); })
       .then(function () { btn.disabled = false; });
   };
 
@@ -1160,9 +2015,9 @@
     backdrop.className = 'modal-backdrop';
     backdrop.innerHTML =
       '<div class="modal">' +
-      '  <h2>Rebooting device</h2>' +
+      '  <h2>' + escapeHtml(t('rebooting')) + '</h2>' +
       '  <div class="countdown" id="reboot-count">5</div>' +
-      '  <div class="hint">Page will refresh automatically...</div>' +
+      '  <div class="hint">' + escapeHtml(t('refresh_hint')) + '</div>' +
       '</div>';
     document.body.appendChild(backdrop);
 
@@ -1179,7 +2034,7 @@
   }
 
   $('reboot-btn').onclick = function () {
-    if (!confirm('Reboot the device now?')) return;
+    if (!confirm(t('confirm_reboot'))) return;
     var btn = this;
     btn.disabled = true;
     fetch('/api/reboot', { method: 'POST' })

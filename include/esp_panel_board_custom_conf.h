@@ -103,8 +103,8 @@
                                                             // The size should satisfy `size * N = LCD_width * LCD_height`,
                                                             // where N is an even number.
                                                             // For more details, see: https://github.com/esp-arduino-libs/ESP32_Display_Panel/blob/master/docs/FAQ.md#how-to-fix-screen-drift-issue-when-driving-rgb-lcd-with-esp32-s3
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_HSYNC        (46)
-    #define ESP_PANEL_BOARD_LCD_RGB_IO_VSYNC        (3)
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_HSYNC        (56)
+    #define ESP_PANEL_BOARD_LCD_RGB_IO_VSYNC        (13)
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DE           (5)    // -1 if not used
     #define ESP_PANEL_BOARD_LCD_RGB_IO_PCLK         (7)
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DISP         (-1)    // -1 if not used. Typically set to -1

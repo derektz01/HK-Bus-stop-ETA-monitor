@@ -19,6 +19,10 @@ void Update_Background(void);
 
 void OnNextPagePressed(void);
 
+// Power down the LCD backlight (CH422G expander pin). Used by the sleep
+// module before entering deep sleep so the panel goes dark immediately.
+void Display_BacklightOff(void);
+
 #ifdef __cplusplus
 }
 #endif

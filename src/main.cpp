@@ -8,6 +8,7 @@
 #include "ConfigManager.h"
 #include "Wireless.h"
 #include "WebPortal.h"
+#include "Sleep.h"
 
 // Set true by network task while an API fetch is in progress; gates the loop
 // task's UI work to free PSRAM bandwidth for the LCD EDMA. Single writer
@@ -96,6 +97,9 @@ void setup()
   Serial.begin(115200);
   delay(800);
 
+  // Log why this boot happened (power-on vs. timer-wake vs. touch-wake).
+  Sleep_Init();
+
   // Brings up the Waveshare ESP32-S3-Touch-LCD-4.3 board, LVGL, and the
   // SquareLine UI. Must run before any Update_* / ShowWifiInfo call.
   Display_Init();
@@ -163,6 +167,10 @@ void loop()
   static unsigned long lastWifiInfoCycle = 0;
   static unsigned long bootTime = millis();
   static bool wifiInfoHidden = false;
+
+  // Test-only: enter deep sleep at uptime+3min, wake after 6min (or touch).
+  // Never returns once the threshold is hit; the device reboots on wake.
+  Sleep_Tick();
 
   // Service pending HTTP clients (cheap, doesn't dirty widgets — keep running)
   WebPortal_Loop();

@@ -32,7 +32,7 @@ void Display_Init()
 #  if ESP_PANEL_DRIVERS_BUS_ENABLE_RGB && CONFIG_IDF_TARGET_ESP32S3
     auto bus = lcd->getBus();
     if (bus->getBasicAttributes().type == ESP_PANEL_BUS_TYPE_RGB) {
-        static_cast<BusRGB *>(bus)->configRGB_BounceBufferSize(lcd->getFrameWidth() * 10);
+        static_cast<BusRGB *>(bus)->configRGB_BounceBufferSize(lcd->getFrameWidth() * 8);
     }
 #  endif
 #endif
@@ -60,6 +60,13 @@ void Display_Init()
 
     printf("Display initialised (LVGL on Waveshare ESP32-S3-Touch-LCD-4.3, 800x480)\n");
     Heap_Log("after Display_Init");
+}
+
+void Display_BacklightOff(void)
+{
+    if (!s_board) return;
+    auto bl = s_board->getBacklight();
+    if (bl) bl->off();
 }
 
 // ============================================================================
@@ -254,14 +261,22 @@ void Update_Bus_List()
             const char *e1 = has ? displayRoutes[i].etaDisplay1  : "";
             const char *e2 = has ? displayRoutes[i].etaDisplay2  : "";
             const char *d  = has ? displayRoutes[i].destination  : "";
+            // Prepend "往 " (UTF-8 E5 BE 80 + space) only when the destination
+            // is non-empty; empty stays empty (no orphan "往 ").
+            char destBuf[96];
+            const char *destText = "";
+            if (d && d[0]) {
+                snprintf(destBuf, sizeof(destBuf), "往 %s", d);
+                destText = destBuf;
+            }
             lv_label_set_text(route[s], r);
             lv_label_set_text(eta1[s],  e1);
             lv_label_set_text(eta2[s],  e2);
-            lv_label_set_text(dest[s],  d);
+            lv_label_set_text(dest[s],  destText);
             if (has) {
                 snprintf(lines[lineCount], sizeof(lines[lineCount]),
                          "Displayed Route %d | %s | %s | %s | %s",
-                         s + 1, r, e1, e2, d);
+                         s + 1, r, e1, e2, destText);
                 lineCount++;
             }
         }
