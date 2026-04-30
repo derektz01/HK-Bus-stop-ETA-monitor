@@ -92,10 +92,10 @@
     #define ESP_PANEL_BOARD_LCD_RGB_PCLK_ACTIVE_NEG (1)     // 0: rising edge, 1: falling edge. Typically set to 0
                                                                                         // The following sheet shows the valid combinations of
                                                                                         // data width and pixel bits:
-                                                                                        // â---------------------------------â³- -------------------------------â
+                                                                                        // ┏---------------------------------┳- -------------------------------┓
     #define ESP_PANEL_BOARD_LCD_RGB_DATA_WIDTH      (16)                                // |                16               |               8                 |
     #define ESP_PANEL_BOARD_LCD_RGB_PIXEL_BITS      (ESP_PANEL_LCD_COLOR_BITS_RGB565)   // | ESP_PANEL_LCD_COLOR_BITS_RGB565 | ESP_PANEL_LCD_COLOR_BITS_RGB888 |
-                                                                                        // â---------------------------------â»---------------------------------â
+                                                                                        // ┗---------------------------------┻---------------------------------┛
                                                             // To understand color format of RGB LCD, see: https://docs.espressif.com/projects/esp-iot-solution/en/latest/display/lcd/rgb_lcd.html#color-formats
     #define ESP_PANEL_BOARD_LCD_RGB_BOUNCE_BUF_SIZE (ESP_PANEL_BOARD_WIDTH * 10)
                                                             // Bounce buffer size in bytes. It is used to avoid screen drift
@@ -111,11 +111,11 @@
 
                                                             // The following sheet shows the mapping of ESP GPIOs to
                                                             // LCD data pins with different data width and color format:
-                                                            // â------â³- ------------â³--------------------------â
+                                                            // ┏------┳- ------------┳--------------------------┓
                                                             // | ESP: | 8-bit RGB888 |      16-bit RGB565       |
                                                             // |------|--------------|--------------------------|
                                                             // | LCD: |    RGB888    | RGB565 | RGB666 | RGB888 |
-                                                            // â------|--------------|--------|--------|--------|
+                                                            // ┗------|--------------|--------|--------|--------|
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA0        (14)    //        |      D0      |   B0   |  B0-1  |   B0-3 |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA1        (38)    //        |      D1      |   B1   |  B2    |   B4   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA2        (18)    //        |      D2      |   B2   |  B3    |   B5   |
@@ -124,7 +124,7 @@
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA5        (39)    //        |      D5      |   G0   |  G0    |   G0-2 |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA6        (0)     //        |      D6      |   G1   |  G1    |   G3   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA7        (45)    //        |      D7      |   G2   |  G2    |   G4   |
-#if ESP_PANEL_BOARD_LCD_RGB_DATA_WIDTH > 8                  //        â--------------â«--------|--------|--------|
+#if ESP_PANEL_BOARD_LCD_RGB_DATA_WIDTH > 8                  //        ┗--------------┫--------|--------|--------|
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA8        (48)    //                       |   G3   |  G3    |   G5   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA9        (47)    //                       |   G4   |  G4    |   G6   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA10       (21)    //                       |   G5   |  G5    |   G7   |
@@ -133,7 +133,7 @@
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA13       (42)    //                       |   R2   |  R3    |   R5   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA14       (41)    //                       |   R3   |  R4    |   R6   |
     #define ESP_PANEL_BOARD_LCD_RGB_IO_DATA15       (40)    //                       |   R4   |  R5    |   R7   |
-                                                            //                       â--------â»--------â»--------â
+                                                            //                       ┗--------┻--------┻--------┛
 #endif // ESP_PANEL_BOARD_LCD_RGB_DATA_WIDTH
 
 #endif // ESP_PANEL_BOARD_LCD_BUS_TYPE

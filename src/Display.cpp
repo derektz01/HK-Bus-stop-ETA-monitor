@@ -48,6 +48,14 @@ void Display_Init()
     // hotspot never receives LV_EVENT_PRESSED. Re-enable here so we don't
     // have to edit a generated file.
     lv_obj_add_flag(ui_ctrTouch, LV_OBJ_FLAG_CLICKABLE);
+    // Collapse the three SquareLine background widgets into one. The day
+    // widget stays and Update_Background() swaps its image source via
+    // lv_img_set_src(); the other two are deleted from the scene graph so
+    // LVGL doesn't iterate them on every refresh.
+    lv_obj_del(ui_imgBackgroundSunset);
+    lv_obj_del(ui_imgBackgroundNight);
+    ui_imgBackgroundSunset = nullptr;
+    ui_imgBackgroundNight  = nullptr;
     lvgl_port_unlock();
 
     printf("Display initialised (LVGL on Waveshare ESP32-S3-Touch-LCD-4.3, 800x480)\n");
@@ -228,15 +236,13 @@ void Update_Background()
     if (pic == lastPic) return;
     lastPic = pic;
 
-    WITH_LVGL();
-    lv_obj_add_flag(ui_imgBackgroundDay,    LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(ui_imgBackgroundSunset, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(ui_imgBackgroundNight,  LV_OBJ_FLAG_HIDDEN);
+    // Image descriptors live in flash; lv_img_set_src just stores the pointer.
+    const lv_img_dsc_t *src = (pic == 0) ? &ui_img_261349413     // hk-day-lvgl.png
+                            : (pic == 1) ? &ui_img_1167879829    // hk-sunset-lvgl.png
+                                         : &ui_img_783909477;    // hk-night-lvgl.png
 
-    lv_obj_t *show = (pic == 0) ? ui_imgBackgroundDay
-                   : (pic == 1) ? ui_imgBackgroundSunset
-                                : ui_imgBackgroundNight;
-    lv_obj_clear_flag(show, LV_OBJ_FLAG_HIDDEN);
+    WITH_LVGL();
+    lv_img_set_src(ui_imgBackgroundDay, src);
     printf("Background switched to pic=%d\n", pic);
 }
 
