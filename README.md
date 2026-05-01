@@ -63,6 +63,15 @@ Download the STEP files from [`3D print/`](3D%20print/):
 - [`ETA_Mon_Back_plate.step`](3D%20print/ETA_Mon_Back_plate.step) — rear plate covering the board
 - [`ETA_Mon_Stand.step`](3D%20print/ETA_Mon_Stand.step) — desk stand
 
+### Assembly hardware
+
+You'll need a small set of screws to put it together:
+
+- **4 × M2.5 × 6 mm Philips-head** — fix the Waveshare board to the back plate (the four mounting holes on the corners of the board)
+- **8 × M3 × 4–5 mm flat-head countersunk** — clamp the front shell, back plate, and stand together
+
+Any standard M2.5 / M3 hardware kit will have these. M3 × 4 mm or M3 × 5 mm both fit; longer than 5 mm risks bottoming out into the panel cavity.
+
 ## Repository Structure
 
 ```text
