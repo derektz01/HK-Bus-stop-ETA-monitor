@@ -1,14 +1,19 @@
 {
   "wifi": {
-    "ssid": "YOUR_WIFI_SSID",
-    "password": "YOUR_WIFI_PASSWORD"
+    "ssid": "YOUR_WIFI_SSID",         // optional — set later in the portal
+    "password": "YOUR_WIFI_PASSWORD"  // optional
   },
   "ap": {
-    "ssid": "BusETAMonitor-AP",
-    "password": "12345678"
+    "ssid": "BusETAMonitor-AP",       // REQUIRED
+    "password": "12345678"            // REQUIRED — ≥ 8 characters
   },
   "stops": {
-    "kmb": ["KMB_STOP_ID"],
-    "ctb": ["CTB_STOP_ID"]
+    "kmb": [],                        // optional — pick stops in the portal
+    "ctb": []
+  },
+  "sleep_schedule": {
+    "wake_tasks": [],                 // optional — set in the portal
+    "sleep_tasks": [],
+    "grace_period_minutes": 5
   }
 }

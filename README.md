@@ -1,6 +1,6 @@
 # HK Bus Stop ETA Monitor
 
-Real-time Hong Kong bus arrival time display running on the **Waveshare ESP32-S3-Touch-LCD-4.3** — an all-in-one board with a 4.3" 800×480 IPS panel, capacitive touch (GT911), 16 MB flash, and 8 MB OPI PSRAM.
+Real-time Hong Kong bus arrival time display running on the **Waveshare ESP32-S3-Touch-LCD-4.3** — an all-in-one board with a 4.3" 800×480 IPS panel, capacitive touch (GT911), 16 MB flash, and 8 MB OPI PSRAM. ([https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm](https://www.waveshare.com/esp32-s3-touch-lcd-4.3.htm))
 
 ![Main Display](img/main-display.jpg)
 
@@ -53,9 +53,9 @@ The display shows:
 
 A 3D-printable case with a desk stand has been designed for this build. The STEP sources are in the repo so you can adapt them in any CAD tool before slicing.
 
-| Front | Back |
-| --- | --- |
-| ![Case front](img/case-front.jpg) | ![Case back](img/case-back.jpg) |
+| Front | Back | Inside |
+| --- | --- | --- |
+| ![Case front](img/case-front.jpg) | ![Case back](img/case-back.jpg) | ![Inside](img/case-inside.jpg) |
 
 Download the STEP files from [`3D print/`](3D%20print/):
 

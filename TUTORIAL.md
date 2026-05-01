@@ -48,6 +48,15 @@ Fill in the **SSID** and **Password** of the network you want the device to join
 
 ## 4. Stop list cache
 
+> ⚠️ **Wi-Fi (STA) mode is required to build the cache.** The cache build runs entirely in **your browser** — it fetches stop data straight from `data.etabus.gov.hk` and `rt.data.gov.hk`, not through the device. While the device is in **AP mode**, your phone or laptop has no path to the public internet, so the rebuild will fail (you'll see a CORS-looking error in the console; it's actually `HTTP 403` from the upstream gateway).
+>
+> **First-time setup flow**:
+>
+> 1. Complete [§3 Wi-Fi setup](#3-wi-fi-setup) — enter your home Wi-Fi SSID + password.
+> 2. Click **Save**, then click **Reboot** ([§10](#10-rebooting-the-device)).
+> 3. After the device comes back, the LCD banner ([§1](#1-opening-the-settings-page)) shows the new STA IP. Reconnect a browser on the **same home Wi-Fi** to that IP.
+> 4. *Now* you can press **Rebuild stop list** here.
+
 A separate **Stop list cache** card sits at the top of the Bus Stops section. It shows, at a glance:
 
 - Whether the cache is built for each operator
