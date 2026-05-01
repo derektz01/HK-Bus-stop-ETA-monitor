@@ -177,6 +177,29 @@ static const JsonDocument &busEtaFilter()
 }
 
 // ================================================================
+// Process-shared TLS client for CTB. CTB's API redirects HTTP→HTTPS, so
+// TLS is unavoidable. To minimise the per-call mbedTLS footprint we:
+//  - skip cert-chain verification (public ETA data, no secrets in transit) —
+//    saves the cert-chain parse allocations during handshake
+//  - keep one client across calls so the mbedTLS context isn't rebuilt
+//    (and re-malloc'd in PSRAM) on every Fetch_Citybus_StopETA
+// (NB: ESP32's NetworkClientSecure doesn't expose setBufferSizes — the
+// in/out record buffers are fixed by CONFIG_MBEDTLS_SSL_*_CONTENT_LEN at
+// IDF build time, not at runtime.)
+// ================================================================
+static WiFiClientSecure &ctbSharedClient()
+{
+    static WiFiClientSecure client;
+    static bool initialised = false;
+    if (!initialised)
+    {
+        client.setInsecure();
+        initialised = true;
+    }
+    return client;
+}
+
+// ================================================================
 // Citybus Batch Stop ETA (all routes for this stop in one call)
 // ================================================================
 void Fetch_Citybus_StopETA(const char *stop_id)
@@ -191,7 +214,9 @@ void Fetch_Citybus_StopETA(const char *stop_id)
     url += stop_id;
     url += "?lang=zh-hant";
 
-    http.begin(url);
+    // Use the shared TLS client (see ctbSharedClient comment) — skips the
+    // cert-chain parse and avoids rebuilding the mbedTLS context per call.
+    http.begin(ctbSharedClient(), url);
     Heap_Log("Citybus pre-GET");
     int httpCode = http.GET();
 
@@ -249,7 +274,11 @@ void Fetch_KMB_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
-    String url = "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/";
+    // Plain HTTP — data.etabus.gov.hk serves the same body without redirect,
+    // and dropping TLS removes the mbedTLS handshake state allocations
+    // (~25-50 KB peak in PSRAM) that were causing the LCD drift bursts.
+    // The data is public ETAs; nothing here needs cert-verified transport.
+    String url = "http://data.etabus.gov.hk/v1/transport/kmb/stop-eta/";
     url += stop_id;
 
     http.begin(url);

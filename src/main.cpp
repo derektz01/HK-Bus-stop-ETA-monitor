@@ -36,6 +36,19 @@ static bool isWallClockValid()
   return time(nullptr) > 1577836800;
 }
 
+// Pinned to core 0 so HTTP-portal request handling (config save / reboot /
+// static asset reads) doesn't preempt the LVGL render task on core 1 during
+// a request. Polls handleClient() with a short delay to keep CPU low when
+// idle. 8 KB stack covers the JSON parse + HTML response paths.
+static void webPortalTask(void *)
+{
+  for (;;)
+  {
+    WebPortal_Loop();
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+}
+
 static void networkTask(void *)
 {
   // Wait for WiFi to come up before the first fetch.
@@ -58,14 +71,19 @@ static void networkTask(void *)
   // is cheap thanks to change-detection; if the value is already correct
   // it returns before touching LVGL.
   Update_Time();
+  vTaskDelay(pdMS_TO_TICKS(500));
   Update_Date_And_Weekday();
+  vTaskDelay(pdMS_TO_TICKS(500));
   Update_Holiday_Display();
+  vTaskDelay(pdMS_TO_TICKS(500));
   Update_Background();
-
+  vTaskDelay(pdMS_TO_TICKS(500));
   Weather_FetchOpenMeteo();
+  vTaskDelay(pdMS_TO_TICKS(500));
   {
     const Config &cfg = ConfigMgr.getConfig();
     AutoRefreshBusETA(cfg.kmb_stop_ids, cfg.ctb_stop_ids);
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 
   uint32_t lastBus     = millis();
@@ -80,11 +98,13 @@ static void networkTask(void *)
       {
         const Config &cfg = ConfigMgr.getConfig();
         AutoRefreshBusETA(cfg.kmb_stop_ids, cfg.ctb_stop_ids);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         lastBus = millis();
       }
       if (now - lastWeather >= 1800000)
       {
         Weather_FetchOpenMeteo();
+        vTaskDelay(pdMS_TO_TICKS(500));
         lastWeather = millis();
       }
     }
@@ -155,6 +175,11 @@ void setup()
   // on their own cadence; the Arduino loop on core 1 only drives UI ticks.
   xTaskCreatePinnedToCore(networkTask, "network", 12 * 1024, nullptr, 1, nullptr, 0);
 
+  // WebPortal HTTP polling on core 0 too — keeps it off core 1 alongside
+  // the network task. Both are I/O-bound and yield often, so they coexist
+  // without starving each other.
+  xTaskCreatePinnedToCore(webPortalTask, "webportal", 8 * 1024, nullptr, 1, nullptr, 0);
+
   printf("HK Bus Stop ETA Board Ready!\r\n");
 }
 
@@ -172,8 +197,8 @@ void loop()
   // Never returns once the threshold is hit; the device reboots on wake.
   Sleep_Tick();
 
-  // Service pending HTTP clients (cheap, doesn't dirty widgets — keep running)
-  WebPortal_Loop();
+  // WebPortal polling lives on core 0 (see webPortalTask) so the LVGL task
+  // on core 1 never has to share with HTTP-portal request handling.
 
   // While the network task is mid-fetch, skip everything that would dirty an
   // LVGL widget (which forces a full-frame PSRAM write and contends with the
