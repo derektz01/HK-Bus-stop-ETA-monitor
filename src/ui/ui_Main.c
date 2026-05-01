@@ -91,7 +91,7 @@ lv_obj_set_style_text_align(ui_lblNowTime, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN| L
 lv_obj_set_style_text_font(ui_lblNowTime, &ui_font_NSTC80bold, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_left(ui_lblNowTime, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_right(ui_lblNowTime, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_pad_top(ui_lblNowTime, 30, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_pad_top(ui_lblNowTime, 45, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_pad_bottom(ui_lblNowTime, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_lblTemp = lv_label_create(ui_Main);

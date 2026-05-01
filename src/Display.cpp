@@ -360,7 +360,7 @@ void ShowWifiInfo()
     lv_label_set_text(ui_lblWifiInfo, buf);
     // Translucent backdrop (alpha 150/255) so the SSID/IP stays readable
     // against any background image.
-    lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_lblWifiInfo, 255, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_clear_flag(ui_lblWifiInfo, LV_OBJ_FLAG_HIDDEN);
 }
 
@@ -377,7 +377,7 @@ void HideWifiInfo()
     {
         WITH_LVGL();
         lv_label_set_text(ui_lblWifiInfo, "");
-        lv_obj_set_style_bg_opa(ui_lblWifiInfo, 150, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(ui_lblWifiInfo, 0, (uint32_t)LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_add_flag(ui_lblWifiInfo, LV_OBJ_FLAG_HIDDEN);
     }
     // Logged outside the LVGL guard so we measure the heap *after* any

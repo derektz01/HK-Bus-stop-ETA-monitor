@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include "Display.h"
 #include "Diagnostics.h"
+#include "JsonInternal.h"
 #include <time.h>
 #include <vector>
 #include <algorithm>
@@ -210,6 +211,10 @@ void Fetch_Citybus_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
+    // Keep TCP+TLS session alive across stops in this cycle: only the
+    // first Fetch_Citybus_StopETA pays the handshake cost; subsequent
+    // calls in the same AutoRefreshBusETA reuse the established session.
+    http.setReuse(true);
     String url = "https://rt.data.gov.hk/v1/transport/batch/stop-eta/ctb/";
     url += stop_id;
     url += "?lang=zh-hant";
@@ -217,15 +222,17 @@ void Fetch_Citybus_StopETA(const char *stop_id)
     // Use the shared TLS client (see ctbSharedClient comment) — skips the
     // cert-chain parse and avoids rebuilding the mbedTLS context per call.
     http.begin(ctbSharedClient(), url);
+    http.addHeader("Connection", "keep-alive");
     Heap_Log("Citybus pre-GET");
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("Citybus post-GET ok");
-        // Stream-parse from the WiFi socket + key filter (see busEtaFilter)
-        // so the doc only retains the 7 fields per element we actually use.
-        JsonDocument doc;
+        // Parse with the shared key filter (see busEtaFilter) and a
+        // JsonDocument backed by internal SRAM (see jsonInternalAllocator)
+        // so neither the body nor the parse tree touches the PSRAM bus.
+        JsonDocument doc(jsonInternalAllocator());
         DeserializationError error = deserializeJson(
             doc, http.getStream(),
             DeserializationOption::Filter(busEtaFilter()));
@@ -253,6 +260,14 @@ void Fetch_Citybus_StopETA(const char *stop_id)
         {
             printf("Citybus batch ETA parse error: %s\n", error.c_str());
         }
+
+        // Drain leftover bytes (trailing whitespace, chunk markers, any
+        // body bytes ArduinoJson skipped past once the doc was complete)
+        // so the next keep-alive request finds a clean stream.
+        {
+            Stream &s = http.getStream();
+            while (s.available()) s.read();
+        }
     }
     else
     {
@@ -274,6 +289,10 @@ void Fetch_KMB_StopETA(const char *stop_id)
         return;
 
     HTTPClient http;
+    // Reuse the TCP connection across same-host stops in this cycle. No TLS
+    // handshake to amortise (KMB is plain HTTP), but it still saves the
+    // per-stop TCP setup.
+    http.setReuse(true);
     // Plain HTTP — data.etabus.gov.hk serves the same body without redirect,
     // and dropping TLS removes the mbedTLS handshake state allocations
     // (~25-50 KB peak in PSRAM) that were causing the LCD drift bursts.
@@ -282,14 +301,16 @@ void Fetch_KMB_StopETA(const char *stop_id)
     url += stop_id;
 
     http.begin(url);
+    http.addHeader("Connection", "keep-alive");
     Heap_Log("KMB pre-GET");
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
     {
         Heap_Log("KMB post-GET ok");
-        // Stream-parse + key filter (busEtaFilter) — same rationale as CTB.
-        JsonDocument doc;
+        // Parse with the shared key filter and the internal-RAM allocator
+        // (see jsonInternalAllocator). Keeps the parse tree off PSRAM.
+        JsonDocument doc(jsonInternalAllocator());
         DeserializationError error = deserializeJson(
             doc, http.getStream(),
             DeserializationOption::Filter(busEtaFilter()));
@@ -312,6 +333,13 @@ void Fetch_KMB_StopETA(const char *stop_id)
 
                 addRoute(route, seq, etaStr, dataTs, dest, dir);
             }
+        }
+
+        // Drain leftover bytes for clean keep-alive reuse — same rationale
+        // as Fetch_Citybus_StopETA.
+        {
+            Stream &s = http.getStream();
+            while (s.available()) s.read();
         }
     }
     else
@@ -342,7 +370,7 @@ void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
         if (id.length() == 0)
             continue;
         Fetch_KMB_StopETA(id.c_str());
-        delay(200);
+        delay(500);
     }
 
     for (const String &id : ctb_stop_ids)
@@ -350,7 +378,7 @@ void AutoRefreshBusETA(const std::vector<String> &kmb_stop_ids,
         if (id.length() == 0)
             continue;
         Fetch_Citybus_StopETA(id.c_str());
-        delay(200);
+        delay(500);
     }
 
     rebuildDisplayList();

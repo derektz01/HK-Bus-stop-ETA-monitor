@@ -1,6 +1,7 @@
 #include "WeatherData.h"
 #include "Display.h"
 #include "Diagnostics.h"
+#include "JsonInternal.h"
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
@@ -9,7 +10,7 @@
 // ================================================================
 // Weather Data (from Open-Meteo)
 // ================================================================
-float current_temperature = 24.5f;
+float current_temperature = 0.0f;
 uint8_t current_humidity = 68;
 char current_weather_emoji[8] = "☀️";
 char current_weather_desc[32] = "晴朗";
@@ -108,7 +109,9 @@ void Weather_FetchOpenMeteo(void)
     {
         Heap_Log("Weather post-GET ok");
         String payload = http.getString();
-        JsonDocument doc;
+        // Doc backed by internal SRAM (see jsonInternalAllocator) so the
+        // parse tree never touches the PSRAM bus.
+        JsonDocument doc(jsonInternalAllocator());
         DeserializationError error = deserializeJson(
             doc, payload,
             DeserializationOption::Filter(weatherFilter()));
