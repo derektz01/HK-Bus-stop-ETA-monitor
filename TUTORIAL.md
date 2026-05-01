@@ -1,34 +1,44 @@
 # Web Settings Page — User Guide
 
-A walkthrough of the captive web portal used to configure the HK Bus ETA Monitor: Wi-Fi, bus stops (multi-stop), cache rebuild, save, and reboot.
+A walkthrough of the captive web portal used to configure the HK Bus ETA Monitor: language, Wi-Fi, the stop list cache, three ways to pick bus stops, the routes-at-stop view, the sleep schedule, save / reboot, and the rebuild cooldown / rate-limit gate.
 
 ---
 
 ## 1. Opening the settings page
 
-The device serves the settings page on port 80 in both modes:
+The device serves the settings page on port 80 in both Wi-Fi modes:
 
-- **First boot / after a Wi-Fi failure** — the device falls back to AP mode (see [src/Wireless.cpp:23-32](src/Wireless.cpp#L23-L32)). Connect your phone or laptop to the AP advertised by the device, then open `http://192.168.4.1` in a browser.
-- **Normal operation** — the device joins your home Wi-Fi as a station. Open `http://<device-ip>` (the IP appears on the device's screen — see below).
+- **First boot or after a Wi-Fi join failure** — the device falls back to AP mode (see [src/Wireless.cpp](src/Wireless.cpp)). Connect your phone or laptop to the AP advertised by the device, then open `http://192.168.4.1`.
+- **Normal operation** — the device joins your home Wi-Fi as a station. Open `http://<device-ip>` (the IP appears on the device's LCD — see below).
 
-### Finding the IP on the Nextion display
+### Finding the IP on the LCD
 
-To make the address easy to read, the firmware shows a **scrolling Wi-Fi info banner** on the Nextion screen for the first **2 minutes** after boot. The banner contains everything you need to reach the settings page:
+The firmware shows a **scrolling Wi-Fi info banner** on the LCD for the first **2 minutes** after every boot:
 
-- **STA mode** (joined your home Wi-Fi): `WiFi:<ssid>  IP:<ip>` — type that IP into a browser on the same network.
-- **AP mode** (Wi-Fi join failed): `AP:<ssid>  P:<password>  IP:<ip>` — connect your phone to that SSID with the listed password, then open the IP (typically `192.168.4.1`).
+- **STA mode**: `WiFi:<ssid>  IP:<ip>`
+- **AP mode**: `AP:<ssid>  P:<password>  IP:<ip>`
 
-![Device screen showing the scrolling Wi-Fi info banner](img/main-display-2.jpg)
+![Device LCD showing the Wi-Fi info banner](img/main-screen-with-banner.jpg)
 
-After 2 minutes the banner disappears so it doesn't clutter the ETA display. If you miss it or need to see the address again, just power-cycle the device — the banner reappears for another 2 minutes after every boot.
+After 2 minutes the banner disappears so it doesn't clutter the ETA display. If you miss it, just power-cycle the device — the banner reappears for another 2 minutes after every boot.
 
 You should see the page below.
 
-![Settings page overview](img/main-1.png)
+![Settings page overview](img/settings-overview.png)
 
 ---
 
-## 2. Wi-Fi setup
+## 2. Switching language
+
+The top-right of the card has a small **EN / 中** toggle. The page auto-detects your browser's language on first visit (anything starting with `zh` → 繁體中文, otherwise English) and persists your choice in `localStorage`.
+
+![Language switcher in the top-right of the card](img/lang-switch.png)
+
+> Bus stop names are **not** translated — they always come from the operator's API in Chinese (the source field is `name_tc`). Only the UI chrome flips when you switch language.
+
+---
+
+## 3. Wi-Fi setup
 
 Fill in the **SSID** and **Password** of the network you want the device to join. Click **Show** next to the password to reveal what you typed; click **Hide** to mask it again.
 
@@ -36,113 +46,152 @@ Fill in the **SSID** and **Password** of the network you want the device to join
 
 ---
 
-## 3. Building the bus stop list cache
+## 4. Stop list cache
 
-To search stops by Chinese name, the page needs a local cache of stop IDs and names. The cache lives in your browser's `localStorage`, so it's a one-time download per browser.
+A separate **Stop list cache** card sits at the top of the Bus Stops section. It shows, at a glance:
 
-### KMB cache
+- Whether the cache is built for each operator
+- The total stop count and last-built timestamp
+- A **Rebuild stop list** button per operator with the same 60 s cooldown and 2 h rate-limit gate (see §8)
 
-KMB exposes the entire stop list (~6,700 stops) at a single endpoint, so the build is fast — usually a few seconds.
+![Stop list cache card](img/cache-card.png)
 
-![KMB cache loaded with timestamp](img/bus-stop-list-build-1.png)
+To use search or map-based stop picking, you need the cache built. KMB ships its full stop list at one endpoint (~6,800 stops, ~5 s build); CTB has no single endpoint, so the page builds it in three phases:
 
-### Citybus (CTB) cache
+1. Fetch the route list (`/route/CTB`)
+2. For each route × direction, fetch the route-stop list
+3. For each unique stop, fetch the stop name + coordinates + per-route metadata
 
-CTB has no single endpoint, so the page builds the list in three phases:
+Expect CTB's first build to take a few minutes. Watch progress in the per-row status line.
 
-1. Fetch the route list (`/route/CTB`).
-2. For each route × direction, fetch the route-stop list.
-3. For each unique stop, fetch the stop name.
+![CTB rebuild — Phase 2/3 in progress](img/ctb-phase2.png)
 
-Expect this to take a few minutes. You can watch progress in the status line.
-
-![CTB cache before build](img/bus-stop-list-build-3.png)
-
-![CTB rebuild — Phase 2/3 in progress](img/bus-stop-list-build-4.png)
-
-When a build finishes, the status line shows the total stop count and a timestamp:
-
-![CTB cache loaded with timestamp](img/bus-stop-list-build-5.png)
-
-The bus stop section starts collapsed — click **Search by name** to open it (and again to close it):
-
-![Default collapsed state of the bus stop section](img/bus-stop-list-build-8.png)
+The cache is stored in your browser's `localStorage` — it's a one-time cost per browser. Both caches now also carry stop coordinates (used by the map view) and CTB carries per-stop route info (used by the routes-at-stop view).
 
 ---
 
-## 4. Searching and selecting stops (multi-stop)
+## 5. Picking bus stops
 
-Open the search panel with **Search by name**, then type any part of the Chinese stop name. Matches appear live; click any row to add it to the selected list.
+Each operator (KMB and Citybus) has the same row of three buttons under its label:
 
-![KMB search results for 尖沙咀](img/bus-stop-search-1.png)
+| Button | What it does |
+| --- | --- |
+| **Search by name** | Type any part of the Chinese stop name; live results from the cache. |
+| **Pick on map** | Open an interactive map — pan / zoom, tap any pin to add. |
+| **+ Add manually** | Type a known stop ID directly. Useful if you copied it from a URL. |
 
-You can add **as many stops as you want** for both KMB and Citybus — the device will rotate through every selected stop on its display. Below, the user has already picked two KMB stops while still searching for more:
+You can mix all three. Selected stops appear in the list above the buttons; click the red **×** on a row to remove a stop, click **ⓘ** to view the routes that serve it (see §6).
 
-![Multiple KMB stops selected, search still active](img/bus-stop-search-2.png)
+![Three pick methods, all visible](img/pick-methods.png)
 
-CTB works the same way:
+### 5a. Search by name
 
-![CTB search results](img/bus-stop-search-3.png)
+Open the search panel with **Search by name**, type any substring of the Chinese stop name, click any row to add.
 
-To remove a stop, click the red **×** at the right of its row in the selected list.
+![KMB search results](img/search.png)
+
+You can add **as many stops as you want** for both KMB and Citybus — the device cycles through every selected stop on the slideshow.
+
+### 5b. Pick on map (new)
+
+Open with **Pick on map**. The map opens centred on Hong Kong with all stops as clustered pins (numbered cluster bubbles when zoomed out, individual pins when zoomed in). Tap a pin → a popup shows the stop name and ID with **Add this stop** and **View routes** buttons.
+
+![Map picker](img/map.gif)
+
+The map uses Leaflet + OpenStreetMap tiles — **no API key required**, but the browser does need internet for the tile downloads. The Leaflet library itself is bundled in LittleFS.
+
+> Already-selected stops appear in green on the map; unselected pins are blue. If tiles fail to load (e.g. you're connected only to the device's AP), a banner appears suggesting you fall back to **Search by name**.
+
+### 5c. Add manually
+
+Click **+ Add manually** under the operator section, type the stop ID, click **Add**.
+
+- KMB IDs look like `904DEAF7441E3BB8` (16-char hex).
+- CTB IDs are 6 digits, e.g. `001027`.
+
+Manually-added stops show "(unresolved)" until the relevant cache is built — but they still work; the firmware queries by ID, not by name.
 
 ---
 
-## 5. Adding a stop manually
+## 6. Viewing routes for a stop (new)
 
-If you already know a stop ID (e.g. from a `data.etabus.gov.hk` URL or the Citybus website), you can skip the search:
+Each row in your selected-stops list has an **ⓘ** button (between the stop name and the red **×**). Click it to see every route that serves that stop, with destination.
 
-1. Click **+ Add manually** under the relevant section.
-2. Type the stop ID (KMB IDs look like `YT912`; CTB IDs are 6 digits like `001588`).
-3. Click **Add**.
+![View-routes modal](img/routes-modal.png)
 
-Manually-added stops display "(unresolved)" until the corresponding cache is built — but they still work; the firmware queries by ID, not by name.
+- For **KMB**, this fetches `/v1/transport/kmb/stop-eta/<id>` live, so the route list reflects current service.
+- For **CTB**, this reads from the cache built earlier (CTB has no per-stop ETA endpoint that returns routes; you need the cache up-to-date — if it isn't, the modal tells you to rebuild first).
+
+The same modal opens from the map popup's **View routes** button.
 
 ---
 
-## 6. Rebuild cooldown and rate-limit gate
+## 7. Sleep schedule (new)
 
-The KMB and Citybus APIs both rate-limit aggressive callers. The page has two protections to keep you out of trouble.
+A separate **Sleep Schedule** fieldset configures when the device deep-sleeps and wakes:
+
+- **Touch-wake grace period** — when you tap the screen during a scheduled sleep window, the device wakes up and runs for this long before re-sleeping. Choices: 1 / 2 / 5 / 10 / 30 minutes.
+- **Wake at** — list of repeating times the device should wake. Each task is `HH:MM` plus a set of weekdays (日 一 二 三 四 五 六).
+- **Sleep at** — list of repeating times the device should enter deep sleep.
+
+![Sleep schedule UI](img/schedule.png)
+
+Click the day circles to toggle weekdays (blue = active). Click **+ Add** to commit a task to the list; click the red **×** on a row to remove it.
+
+### How the schedule is interpreted
+
+The device computes the most recent past sleep-task and the most recent past wake-task. If the most recent event was a sleep, it deep-sleeps until the next wake-task time. If the most recent event was a wake, it runs until the next sleep-task time.
+
+Touch-wake during a sleep window grants you the configured grace period before the device re-sleeps — handy for a quick glance.
+
+> Schedule changes do **not** require a reboot — they're picked up on the next loop tick. Wi-Fi changes still do.
+
+---
+
+## 8. Rebuild cooldown and rate-limit gate
+
+The KMB and Citybus APIs both rate-limit aggressive callers. The page has two protections.
 
 ### 60-second cooldown
 
 After every rebuild — successful or failed — the **Rebuild stop list** button is disabled for 60 seconds and shows a live countdown:
 
-![Rebuild button in cooldown — Rebuild stop list (49s)](img/bus-stop-list-build-7.png)
+![Rebuild button in cooldown](img/cooldown.png)
 
-This applies to both KMB and CTB rebuild buttons independently.
+This applies to KMB and CTB independently.
 
 ### 2-hour cache-age gate
 
-If you click **Rebuild stop list** while the cache is younger than two hours, the confirm dialog tells you exactly how recent the cache is and warns about API rate-limiting:
+If you click **Rebuild stop list** while the cache is younger than 2 hours, a confirm dialog tells you exactly how recent the cache is and warns about API rate-limiting:
 
-![First-time rebuild confirm](img/bus-stop-list-build-2.png)
+![Cache-age warning](img/rebuild-confirm.png)
 
-![Cache-age warning — rebuilt 11 minutes ago](img/bus-stop-list-build-6.png)
-
-> **Why this matters.** When the data.gov.hk gateway rate-limits a request it returns `HTTP 403` *without* CORS headers. The browser surfaces this as a confusing CORS error in the console even though the real cause is throttling. The cooldown and gate are there so you don't trip into that state by accident.
+> **Why this matters.** When `data.gov.hk` rate-limits a request it returns `HTTP 403` *without* CORS headers. The browser surfaces this as a confusing CORS error in the console even though the real cause is throttling. The cooldown and gate are there so you don't trip into that state by accident.
 
 Stop lists rarely change — rebuild only when you genuinely need newer data (e.g. a new route opened).
 
 ---
 
-## 7. Saving configuration
+## 9. Saving configuration
 
-Click **Save** to persist Wi-Fi credentials and the selected stop lists to flash. The page POSTs to `/api/config` and the firmware writes to LittleFS ([src/WebPortal.cpp:63-104](src/WebPortal.cpp#L63-L104)).
+Click **Save** to persist Wi-Fi credentials, the selected stop lists, and the sleep schedule to flash. The page POSTs to `/api/config` and the firmware writes to LittleFS ([src/WebPortal.cpp](src/WebPortal.cpp)).
 
-- **Stop selection changes** are picked up on the next ETA refresh — no reboot required.
-- **Wi-Fi changes** require a reboot to take effect.
+| Change | Takes effect |
+| --- | --- |
+| Stop selection | next ETA refresh (≤ 45 s) — no reboot |
+| Sleep schedule (incl. grace period) | next loop tick — no reboot |
+| Wi-Fi credentials | requires **Reboot** |
 
 ---
 
-## 8. Rebooting the device
+## 10. Rebooting the device
 
 Click **Reboot** and confirm:
 
-![Reboot confirmation dialog](img/reboot-1.png)
+![Reboot confirmation](img/reboot-confirm.png)
 
-The page then shows a 5-second countdown and refreshes itself when the device comes back up:
+The page shows a 5-second countdown and refreshes itself when the device comes back up:
 
-![Reboot countdown modal](img/reboot-2.png)
+![Reboot countdown](img/reboot-countdown.png)
 
-If you changed Wi-Fi credentials, the device may now be on a different network — re-open the page at the new IP shown on the device screen.
+If you changed Wi-Fi credentials, the device may now be on a different network — re-open the page at the new IP shown on the LCD (the banner reappears for 2 minutes after every boot).
